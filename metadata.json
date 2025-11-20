@@ -1,0 +1,7 @@
+{
+  "name": "Final",
+  "description": "A comprehensive Cybersecurity Awareness Assistant powered by Gemini. Features tailored learning, quizzes, threat analysis, and multi-language support.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
