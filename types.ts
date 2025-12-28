@@ -1,3 +1,4 @@
+
 export enum KnowledgeLevel {
   Beginner = 'Beginner',
   Intermediate = 'Intermediate',
@@ -40,8 +41,11 @@ export interface QuizData {
   explanation: string;
 }
 
+// Updated Message interface: added optional _id and made id optional to support 
+// backend-generated IDs and fix compilation errors in App.tsx.
 export interface Message {
-  id: string;
+  id?: string;
+  _id?: string;
   role: 'user' | 'model';
   content: string;
   type: MessageType;
@@ -58,8 +62,11 @@ export interface Attachment {
   name: string;
 }
 
+// Updated ChatSession interface: added optional _id to support 
+// database identifiers and fix property access errors in App.tsx.
 export interface ChatSession {
   id: string;
+  _id?: string;
   title: string;
   messages: Message[];
   lastUpdated: number;

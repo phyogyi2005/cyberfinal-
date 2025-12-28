@@ -1,139 +1,105 @@
-import { GoogleGenAI } from "@google/genai";
+
 import { Message, KnowledgeLevel, Attachment, MessageType, AnalysisResult, QuizData, ChatMode } from "../types";
 
-// --- CONFIGURATION ---
-// Using Gemini 3 models as per guidelines
-const REASONING_MODEL = 'gemini-3-pro-preview';
-const SPEED_MODEL = 'gemini-3-flash-preview';
+// Determine the backend URL based on environment
+const BACKEND_URL = (window as any).VITE_BACKEND_URL || 'https://your-backend-url.onrender.com';
 
-const getSystemInstruction = (userLevel: KnowledgeLevel, language: 'en' | 'my', mode: ChatMode) => {
-  let baseInstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
-  User Knowledge Level: ${userLevel}.
-  Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
-  
-  Current Mode: ${mode.toUpperCase()}.
-  `;
-
-  switch (mode) {
-    case 'quiz':
-      baseInstruction += `
-      TASK: You are a Quiz Host.
-      1. You will conduct a 5-question quiz.
-      2. If the user says "Start", provide Question 1 immediately.
-      3. For Questions 1 through 5:
-         - Wait for user answer.
-         - Provide feedback (Correct/Incorrect) + short explanation.
-         - THEN generate the NEXT question JSON.
-      
-      CRITICAL OUTPUT RULES:
-      - OUTPUT STRICTLY VALID JSON.
-      - Ensure "options" is an Array of strings.
-      - Ensure "correctAnswerIndex" is a number (0-3).
-      
-      JSON FORMAT:
-      \`\`\`json
-      {
-        "question": "Question text here?",
-        "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
-        "correctAnswerIndex": 0,
-        "explanation": "Explanation here."
-      }
-      \`\`\`
-      `;
-      break;
-    case 'learning':
-      baseInstruction += `
-      TASK: You are an engaging Cyber Tutor.
-      STYLE: Use Numbered Lists, **Bold Main Points**, Short Paragraphs, and Emojis (🚩, 🔒, ✅).
-      `;
-      break;
-    case 'analysis':
-      baseInstruction += `
-      TASK: You are a Threat Analyst. Analyze URLs, IPs, or Files.
-      Output strictly JSON:
-      {
-        "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
-        "score": number (0-100),
-        "findings": [{"category": "string", "details": "string"}],
-        "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
-      }
-      `;
-      break;
-    default:
-      baseInstruction += `Answer cybersecurity questions normally.`;
-      break;
-  }
-
-  return baseInstruction;
-};
-
-export const fileToGenerativePart = (base64Data: string, mimeType: string) => {
+const getHeaders = () => {
+  const token = localStorage.getItem('cyber_token');
   return {
-    inlineData: {
-      data: base64Data,
-      mimeType
-    },
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   };
 };
 
+export const api = {
+  async register(data: any) {
+    const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Registration failed');
+    return res.json();
+  },
+
+  async login(data: any) {
+    const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Login failed');
+    return res.json();
+  },
+
+  async getSessions() {
+    const res = await fetch(`${BACKEND_URL}/api/sessions`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async createSession(title?: string, mode?: ChatMode) {
+    const res = await fetch(`${BACKEND_URL}/api/sessions`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ title, mode })
+    });
+    return res.json();
+  },
+
+  async getMessages(sessionId: string) {
+    const res = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/messages`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async sendMessage(payload: any) {
+    const res = await fetch(`${BACKEND_URL}/api/chat`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Server connection lost. Please check if your backend is running.');
+    }
+    return res.json();
+  }
+};
+
+// Unified function for App.tsx to avoid direct Gemini SDK calls
 export const sendMessageToGemini = async (
   history: Message[],
   currentMessage: string,
   attachments: Attachment[],
   userLevel: KnowledgeLevel,
   language: 'en' | 'my',
-  mode: ChatMode
-): Promise<{ text: string; type: MessageType; analysisData?: AnalysisResult; quizData?: QuizData }> => {
-  
+  mode: ChatMode,
+  sessionId?: string
+): Promise<any> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    
-    const historyParts = history.slice(-10).map(msg => ({
-      role: msg.role === 'model' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
-
-    const currentParts: any[] = attachments.map(att => fileToGenerativePart(att.data, att.mimeType));
-    currentParts.push({ text: currentMessage });
-
-    const modelName = (mode === 'analysis' || mode === 'quiz') ? REASONING_MODEL : SPEED_MODEL;
-    const systemInstruction = getSystemInstruction(userLevel, language, mode);
-
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [...historyParts, { role: 'user', parts: currentParts }],
-      config: { 
-        systemInstruction,
-        responseMimeType: (mode === 'analysis' || mode === 'quiz') ? "application/json" : undefined 
-      }
+    const response = await api.sendMessage({
+      sessionId,
+      message: currentMessage,
+      attachments,
+      userLevel,
+      language,
+      mode
     });
-
-    const rawText = response.text || "";
-
-    if (mode === 'quiz' || mode === 'analysis') {
-      try {
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const json = JSON.parse(jsonMatch[0]);
-          if (mode === 'quiz') {
-            return { text: "Next Question:", type: MessageType.QUIZ, quizData: json };
-          } else {
-            return { text: "Analysis Result:", type: MessageType.ANALYSIS, analysisData: json };
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to parse JSON response", e);
-      }
-    }
-
-    return { text: rawText, type: MessageType.TEXT };
-
+    
+    // The backend returns a saved message object
+    return {
+      text: response.content,
+      type: response.type,
+      analysisData: response.analysisData,
+      quizData: response.quizData
+    };
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    let errorMsg = "I'm sorry, I'm having trouble connecting to my brain right now.";
-    if (error.message?.includes('location') || error.message?.includes('supported')) {
-      errorMsg = "⚠️ **Region Restricted**: Gemini 3 models are currently restricted in your geographic region. Please try again later or use a different network.";
-    }
-    return { text: errorMsg, type: MessageType.TEXT };
+    console.error("API Error:", error);
+    return { 
+      text: `⚠️ **Error**: ${error.message}. Please ensure your API Key is set in the Render Backend settings.`, 
+      type: MessageType.TEXT 
+    };
   }
 };
