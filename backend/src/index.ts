@@ -60,7 +60,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: 'Forbidden' });
+    if (err) return res.status(403).json({ error: token });
     req.user = user;
     next();
   });
