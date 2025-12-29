@@ -8,9 +8,14 @@ import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 5000;
+app.use(cors({
+  origin: ["https://cyber-b4vl.onrender.com"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+app.options("*", cors());
+app.use(express.json({ limit: "50mb" }));
 const JWT_SECRET = process.env.JWT_SECRET || 'cyber-advisor-super-secret-key';
 
 // --- DATABASE SCHEMAS ---
