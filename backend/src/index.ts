@@ -297,7 +297,8 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       }`;
       
       const response = await ai.models.generateContent({
-        model: (mode === 'analysis') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
+        //model: (mode === 'analysis') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: [...historyParts, { role: 'user', parts: [{ text: message }] }],
         config: { systemInstruction: instruction }
       });
