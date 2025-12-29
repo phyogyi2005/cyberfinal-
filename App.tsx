@@ -186,7 +186,8 @@ const handleLogin = (userData: User, token: string) => { // 👈 (1) token က�
       userMessage.attachments || [],
       user.knowledgeLevel,
       language,
-      effectiveMode
+      effectiveMode,
+      currentSessionId!
     );
 
     const aiMessage: Message = {
