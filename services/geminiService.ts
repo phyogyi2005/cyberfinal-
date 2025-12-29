@@ -2,7 +2,7 @@
 import { Message, KnowledgeLevel, Attachment, MessageType, AnalysisResult, QuizData, ChatMode } from "../types";
 
 // Determine the backend URL based on environment
-const BACKEND_URL = (window as any).VITE_BACKEND_URL || 'https://your-backend-url.onrender.com';
+const BACKEND_URL = (window as any).VITE_BACKEND_URL || 'https://cyberfinalnew.onrender.com';
 
 const getHeaders = () => {
   const token = localStorage.getItem('cyber_token');
