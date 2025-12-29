@@ -73,12 +73,22 @@ function App() {
     setQuizCount(0);
   };
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('cyberguard_user', JSON.stringify(userData));
-    if (sessions.length === 0) createNewSession();
-  };
-
+  // const handleLogin = (userData: User) => {
+  //   setUser(userData);
+  //   localStorage.setItem('cyberguard_user', JSON.stringify(userData));
+  //   if (sessions.length === 0) createNewSession();
+  // };
+const handleLogin = (userData: User, token: string) => { // 👈 (1) token ကို လက်ခံပါ
+  setUser(userData);
+  
+  // User Data ကို သိမ်းခြင်း
+  localStorage.setItem('cyberguard_user', JSON.stringify(userData));
+  
+  // 👇 (2) Token ကို 'cyber_token' နာမည်နဲ့ မဖြစ်မနေ သိမ်းရပါမယ်
+  localStorage.setItem('cyber_token', token); 
+  
+  if (sessions.length === 0) createNewSession();
+};
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('cyberguard_user');
