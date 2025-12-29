@@ -54,13 +54,48 @@ const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }) as any);
 
+// const authenticateToken = (req: any, res: any, next: any) => {
+//   const authHeader = req.headers['authorization'];
+//   const token = authHeader && authHeader.split(' ')[1];
+//   if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+//   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+//     if (err) return res.status(403).json({ error: JWT_SECRET);
+//     req.user = user;
+//     next();
+//   });
+// };
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
+  
+  // "Bearer <token>" ပုံစံ ဖြစ်မဖြစ် စစ်ဆေးခြင်း
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  // (၁) Token လုံးဝ မပါလာလျှင် (401 Unauthorized)
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: Access Token is missing' });
+  }
 
   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: JWT_SECRET);
+    if (err) {
+      // Console မှာ Error အစစ်ကို ထုတ်ကြည့်မယ် (Developer အတွက်)
+      console.error("JWT Verification Error:", err.name, err.message);
+
+      // (၂) Token သက်တမ်းကုန်သွားလျှင် (Expired)
+      if (err.name === 'TokenExpiredError') {
+        return res.status(403).json({ error: 'Forbidden: Session expired. Please login again.' });
+      }
+
+      // (၃) & (၄) Token အတုဖြစ်ခြင်း၊ Secret Key မှားခြင်း၊ ပုံစံမကျခြင်း (Invalid)
+      if (err.name === 'JsonWebTokenError') {
+        return res.status(403).json({ error: 'Forbidden: Invalid Token. Please login again.' });
+      }
+
+      // အခြား Error များ
+      return res.status(403).json({ error: 'Forbidden: Authentication failed' });
+    }
+
+    // အားလုံး အောင်မြင်လျှင်
     req.user = user;
     next();
   });
