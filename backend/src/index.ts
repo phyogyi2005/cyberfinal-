@@ -145,6 +145,7 @@ if (MONGODB_URI) {
 
 // --- AI SETUP ---
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+console.log("ai key", ai);
 
 // --- ROUTES ---
 
