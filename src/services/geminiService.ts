@@ -1,7 +1,7 @@
 
 import { Message, KnowledgeLevel, Attachment, MessageType, AnalysisResult, QuizData, ChatMode } from "../types";
 
-const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://cyberfinalnew.onrender.com';
 
 const getHeaders = () => {
   const token = localStorage.getItem('cyber_token');
