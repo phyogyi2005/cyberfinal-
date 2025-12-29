@@ -28,7 +28,8 @@ const sessionSchema = new mongoose.Schema({
 });
 
 const messageSchema = new mongoose.Schema({
-  sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
+  sessionId: { type: String, required: true },
+  //sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
   role: { type: String, enum: ['user', 'model'], required: true },
   content: { type: String, required: true },
   type: { type: String, default: 'text' },
