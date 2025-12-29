@@ -5,8 +5,9 @@ import { Message, KnowledgeLevel, Attachment, MessageType, AnalysisResult, QuizD
 const BACKEND_URL = (window as any).VITE_BACKEND_URL || 'https://cyberfinalnew.onrender.com';
 
 const getHeaders = () => {
-  const token = localStorage.getItem('cyber_token');
-  return {
+  //const token = localStorage.getItem('cyber_token');
+  const token = 'my-super-secure-long-password-12345!@#';
+  return { 
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   };
