@@ -7,11 +7,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from "@google/genai";
 
-dotenv.config();
-app.options("*", cors());
-app.use(express.json({ limit: "50mb" }));
+const app = express();
+const PORT = process.env.PORT || 5000; 
 const JWT_SECRET = process.env.JWT_SECRET || 'cyber-advisor-super-secret-key';
-
 // --- DATABASE SCHEMAS ---
 
 const userSchema = new mongoose.Schema({
