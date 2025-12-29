@@ -298,7 +298,8 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       
       const response = await ai.models.generateContent({
         //model: (mode === 'analysis') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
-        model: 'gemini-1.5-flash',
+        // ✅ ဒီအတိုင်း အတိအကျ ပြောင်းရေးလိုက်ပါ
+        model: (mode === 'analysis') ? 'gemini-1.5-pro' : 'gemini-1.5-flash',
         contents: [...historyParts, { role: 'user', parts: [{ text: message }] }],
         config: { systemInstruction: instruction }
       });
@@ -329,9 +330,22 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
 
     res.json(savedAiMsg);
 
-  } catch (error: any) {
-    console.error("Chat Error:", error);
-    res.status(500).json({ error: "The AI service is currently unavailable or restricted in your region." });
+  // } catch (error: any) {
+  //   console.error("Chat Error:", error);
+  //   res.status(500).json({ error: "The AI service is currently unavailable or restricted in your region." });
+  // }
+    } catch (error: any) {
+    // 1. Console မှာ Error အပြည့်အစုံကို ထုတ်ပြမယ် (Render Logs မှာ ကြည့်ဖို့)
+    console.error("🔥 ACTUAL SERVER ERROR:", error);
+
+    // 2. Error Message အမှန်ကို Frontend ဆီ ပြန်ပို့မယ်
+    // Google API က ပို့လိုက်တဲ့ Error message အတိအကျကို ယူပါမယ်
+    const errorMessage = error.message || "Unknown AI Error";
+
+    res.status(500).json({ 
+      error: `AI Error: ${errorMessage}`, // 👈 အကြောင်းရင်းမှန်ကို ဒီမှာ ပြမယ်
+      details: error // (Optional) အသေးစိတ် အချက်အလက်
+    });
   }
 });
 app.get('/', (req, res) => {
