@@ -20,12 +20,23 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// const sessionSchema = new mongoose.Schema({
+//   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+//   title: { type: String, default: 'New Conversation' },
+//   mode: { type: String, default: 'normal' },
+//   lastUpdated: { type: Date, default: Date.now }
+// });
+
+// index.ts ထဲမှာ sessionSchema အဟောင်းကို ဖျက်ပြီး ဒါကို ထည့်ပါ
+
 const sessionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  _id: { type: String, required: true }, // 👈 (၁) အရေးကြီးဆုံး ပြင်ဆင်ချက်
+  userId: { type: String, required: true }, // (၂) User ID ကိုလည်း String ပြောင်းလိုက်တာ ပိုစိတ်ချရပါတယ်
   title: { type: String, default: 'New Conversation' },
   mode: { type: String, default: 'normal' },
   lastUpdated: { type: Date, default: Date.now }
 });
+
 
 const messageSchema = new mongoose.Schema({
   sessionId: { type: String, required: true },
@@ -248,7 +259,16 @@ app.get('/api/sessions/:id/messages', authenticateToken, async (req: any, res) =
 app.post('/api/chat', authenticateToken, async (req: any, res) => {
   try {
     const { sessionId, message, attachments, userLevel, language, mode } = req.body;
-    
+    let session = await Session.findById(sessionId);
+    if (!session) {
+        session = new Session({
+            _id: sessionId, // Frontend ID ကို သုံးမယ်
+            userId: req.user.id,
+            title: message.substring(0, 30) + (message.length > 30 ? "..." : ""),
+            mode: mode || 'normal'
+        });
+        await session.save();
+    }
     const userMsg = new Message({
       sessionId,
       role: 'user',
