@@ -298,6 +298,19 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         role: m.role,
         parts: [{ text: m.content }]
       }));
+      const currentParts: any[] = [{ text: message }]; // စာကို အရင်ထည့်မယ်
+
+      // ပုံတွေ ပါလာရင် Base64 data ကို Gemini format ပြောင်းပြီး ထည့်မယ်
+      if (attachments && attachments.length > 0) {
+        attachments.forEach((att: any) => {
+          currentParts.push({
+            inlineData: {
+              mimeType: att.mimeType, // e.g. 'image/png'
+              data: att.data          // Base64 string
+            }
+          });
+        });
+      }
 
       const instruction = `You are Cyber Advisor, a Cybersecurity Threat Analyst. User Level: ${userLevel}. Mode: ${mode}. Use ${language === 'my' ? 'Myanmar' : 'English'}.
       
@@ -321,7 +334,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         //model: (mode === 'analysis') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
         // ✅ ဒီအတိုင်း အတိအကျ ပြောင်းရေးလိုက်ပါ
         model: (mode === 'analysis') ? 'gemini-2.5-flash' : 'gemini-2.5-flash',
-        contents: [...historyParts, { role: 'user', parts: [{ text: message }] }],
+        contents: [...historyParts, { role: 'user', parts: currentParts }],
         config: { systemInstruction: instruction }
       });
 
