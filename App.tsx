@@ -421,9 +421,11 @@ const handleLogin = (userData: User, token: string) => { // 👈 (1) token က�
              <div className="flex flex-wrap gap-2 mb-3 justify-center sm:justify-start">
                {[
                  { id: 'normal', icon: 'chat', label: 'Normal' },
-                 { id: 'quiz', icon: 'quiz', label: 'Quiz' },
-                 { id: 'learning', icon: 'school', label: 'Learning' },
                  { id: 'analysis', icon: 'shield', label: 'Check' },
+                 { id: 'learning', icon: 'school', label: 'Learning' },
+                 { id: 'quiz', icon: 'quiz', label: 'Quiz' },
+                 
+                 
                ].map((mode) => (
                  <button
                    key={mode.id}
