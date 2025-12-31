@@ -29,11 +29,19 @@ const userSchema = new mongoose.Schema({
 
 // index.ts ထဲမှာ sessionSchema အဟောင်းကို ဖျက်ပြီး ဒါကို ထည့်ပါ
 
+// const sessionSchema = new mongoose.Schema({
+//   _id: { type: String, required: true }, // 👈 (၁) အရေးကြီးဆုံး ပြင်ဆင်ချက်
+//   userId: { type: String, required: true }, // (၂) User ID ကိုလည်း String ပြောင်းလိုက်တာ ပိုစိတ်ချရပါတယ်
+//   title: { type: String, default: 'New Conversation' },
+//   mode: { type: String, default: 'normal' },
+//   lastUpdated: { type: Date, default: Date.now }
+// });
 const sessionSchema = new mongoose.Schema({
-  _id: { type: String, required: true }, // 👈 (၁) အရေးကြီးဆုံး ပြင်ဆင်ချက်
-  userId: { type: String, required: true }, // (၂) User ID ကိုလည်း String ပြောင်းလိုက်တာ ပိုစိတ်ချရပါတယ်
+  _id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: { type: String, default: 'New Conversation' },
   mode: { type: String, default: 'normal' },
+  score: { type: Number, default: 0 }, // 👈 (၁) အမှတ်မှတ်ဖို့ ဒီ Field အသစ်ထည့်ပါ
   lastUpdated: { type: Date, default: Date.now }
 });
 
@@ -357,38 +365,24 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     //     }
     //   }
     // }
-    if (mode === 'quiz') {
-      // (၁) Quiz ပြီးမပြီး စစ်ဆေးခြင်း ("Final Summary" သို့မဟုတ် "Show My Results" ပါလာရင် ပြီးပြီ)
+   if (mode === 'quiz') {
+      
+      // (A) Quiz ပြီးမပြီး စစ်ဆေးခြင်း
       const isQuizFinished = message.toLowerCase().includes("final summary") || 
                              message.toLowerCase().includes("show my results") ||
-                             message.toLowerCase().includes("play again");
+                             message.toLowerCase().includes("grade this answer") && message.toLowerCase().includes("last");
 
       if (isQuizFinished) {
-        // 🛑 Quiz ပြီးပါပြီ - ရမှတ်တွက်ထုတ်ပေးမယ် (Rule-Based)
+        // 🛑 Quiz ပြီးပါပြီ -> Database ထဲက Score ကို ဆွဲထုတ်ပြမယ်
         
-        // Chat History ကို ပြန်ခေါ်မယ် (၁၅ ကြောင်းလောက်ဆို ၅ ပုဒ်စာ လုံလောက်ပါတယ်)
-        const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(15);
-        
-        let score = 0;
-        const totalQuestions = 5; 
-
-        // History ထဲမှာ "Correct!" လို့ System က ပြောခဲ့တာ ဘယ်နှခါလဲ ရေတွက်မယ်
-        history.forEach(msg => {
-            if (msg.role === 'model') {
-                const text = msg.content;
-                // "✅ Correct!" ဆိုတဲ့ စာလုံးပါရင် အမှတ်တိုးမယ်
-                if (text.includes("✅ Correct!")) {
-                    score++;
-                }
-            }
-        });
-
-        // (တခါတလေ History များသွားရင် ၅ ကျော်တတ်လို့ ပြန်ထိန်းမယ်)
-        if (score > 5) score = 5;
+        // Session ကို ပြန်ရှာပြီး အမှတ်ကြည့်မယ်
+        const currentSession = await Session.findById(sessionId);
+        const score = currentSession?.score || 0; 
+        const totalQuestions = 5;
 
         // Feedback စာသား
         let feedback = "";
-        if (score === 5) feedback = "🏆 Perfect Score! You are a Cyber Expert!";
+        if (score >= 5) feedback = "🏆 Perfect Score! You are a Cyber Expert!";
         else if (score >= 3) feedback = "✅ Good Job! You passed.";
         else feedback = "📚 Keep learning! Try again.";
 
@@ -396,26 +390,49 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         aiResponse.type = 'text';
 
       } else {
-        // 🟢 Quiz ဖြေနေဆဲ -> (၁) အဖြေစစ်မယ် (၂) မေးခွန်းထုတ်မယ်
+        // 🟢 Quiz ဖြေနေဆဲ -> Backend မှာတင် အဖြေစစ်ပြီး အမှတ်ပေါင်းမယ်
 
         let feedback = "";
-        let cleanMessage = message; 
+        
+        // (B) အရင်မေးခွန်းကို ပြန်ရှာပြီး အဖြေတိုက်စစ်ခြင်း
+        // "Start" လို့ပြောရင် အဖြေစစ်စရာ မလိုဘူး (ပထမဆုံးမို့လို့)
+        if (message.toLowerCase() !== "start" && !message.toLowerCase().includes("quiz")) {
+            
+            const lastSystemMsg = await Message.findOne({ 
+                sessionId, 
+                role: 'model', 
+                quizData: { $exists: true } 
+            }).sort({ timestamp: -1 });
 
-        // (၁) Frontend က ပို့လိုက်တဲ့ Tag ကို စစ်ဆေးခြင်း
-        if (message.includes("CORRECT:::")) {
-            feedback = "✅ Correct! (မှန်ပါတယ်)\n\n";
-            cleanMessage = message.replace("CORRECT:::", ""); // Tag ဖြုတ်မယ်
-        } 
-        else if (message.includes("INCORRECT:::")) {
-            feedback = "❌ Incorrect. (မှားပါတယ်)\n\n";
-            cleanMessage = message.replace("INCORRECT:::", ""); // Tag ဖြုတ်မယ်
+            if (lastSystemMsg && lastSystemMsg.quizData) {
+                const qData = lastSystemMsg.quizData;
+                const correctIndex = qData.correctAnswerIndex; 
+                
+                // Database ထဲက အဖြေမှန်စာသား (ဥပမာ "Phishing")
+                const correctOptionText = qData.options[correctIndex] || ""; 
+                
+                // တိုက်စစ်မယ် (User ပို့လိုက်တဲ့ message နဲ့ တူမတူ)
+                const userMsg = message.trim().toLowerCase();
+                const correctText = correctOptionText.trim().toLowerCase();
+                
+                // Click နှိပ်လိုက်တဲ့စာက အဖြေမှန်နဲ့ တူမတူ စစ်မယ်
+                const isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText);
+
+                if (isCorrect) {
+                    feedback = "✅ Correct! (မှန်ပါတယ်)\n\n";
+                    // 👇 အဓိကအချက်: Database မှာ အမှတ် (1) တိုးလိုက်မယ်
+                    await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
+                } else {
+                    feedback = `❌ Incorrect. The answer was: ${correctOptionText}.\n\n`;
+                    // မှားရင် အမှတ်မတိုးဘူး
+                }
+            }
+        } else {
+            // "Start" လို့ ပြောရင် Score ကို 0 ပြန်ထားမယ်
+            await Session.findByIdAndUpdate(sessionId, { score: 0 });
         }
 
-        // (၂) User Message ကို Database မှာ အသန့်ပြန်သိမ်းမယ် (Tag တွေ မမြင်ရအောင်)
-        // အပေါ်မှာ save ပြီးသား userMsg ကို Update လုပ်တာပါ
-        await Message.findByIdAndUpdate(userMsg._id, { content: cleanMessage });
-
-        // (၃) နောက်မေးခွန်းတစ်ခု Database မှ ယူမယ်
+        // (C) နောက်မေးခွန်း ထုတ်ပေးခြင်း
         const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
         const nextQuestion = randomResults[0];
         
@@ -423,8 +440,6 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
           aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found.";
           aiResponse.type = 'text';
         } else {
-          // Feedback ကို ရှေ့ဆုံးက ထည့်ပေးလိုက်မယ်
-          // အရေးကြီးချက်: ဒီ "✅ Correct!" စာလုံးကို Score တွက်တဲ့ Logic က ပြန်ရေတွက်မှာပါ
           aiResponse.content = `${feedback}${language === 'my' ? "နောက်မေးခွန်းမှာ-" : "Here is your next question:"}`;
           aiResponse.type = 'quiz';
           aiResponse.quizData = nextQuestion;
