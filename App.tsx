@@ -205,27 +205,78 @@ const handleLogin = (userData: User, token: string) => { // 👈 (1) token က�
     setSessions(updatedSessions);
     setIsLoading(false);
   };
-
-  // Handler for Quiz Option Click (from ChatMessage component)
-  const handleQuizAnswer = (answerText: string) => {
-     if (chatMode !== 'quiz') return;
+ 
+  // Handler for Quiz Option Click (from ChatMessage component) Old
+  // const handleQuizAnswer = (answerText: string) => {
+  //    if (chatMode !== 'quiz') return;
      
-     const nextCount = quizCount + 1;
-     setQuizCount(nextCount);
+  //    const nextCount = quizCount + 1;
+  //    setQuizCount(nextCount);
 
-     let prompt = "";
-     let displayLabel = "";
+  //    let prompt = "";
+  //    let displayLabel = "";
      
-     if (nextCount <= 5) {
-        prompt = `I choose answer: "${answerText}". Is that correct? Explain briefly, then provide Question ${nextCount} of 5 in JSON format.`;
-        displayLabel = `I choose answer: ${answerText}`;
-     } else {
-        // End of quiz
-        prompt = `I choose answer: "${answerText}". That was the last question. Grade this answer, then provide a final summary of my performance. Finally, ask me 'Do you want to play again?' or 'Exit'. Do NOT generate a JSON question block.`;
-        displayLabel = `I choose answer: ${answerText}`;
+  //    if (nextCount <= 5) {
+  //       prompt = `I choose answer: "${answerText}". Is that correct? Explain briefly, then provide Question ${nextCount} of 5 in JSON format.`;
+  //       displayLabel = `I choose answer: ${answerText}`;
+  //    } else {
+  //       // End of quiz
+  //       prompt = `I choose answer: "${answerText}". That was the last question. Grade this answer, then provide a final summary of my performance. Finally, ask me 'Do you want to play again?' or 'Exit'. Do NOT generate a JSON question block.`;
+  //       displayLabel = `I choose answer: ${answerText}`;
+  //    }
+  //    handleSend(prompt, displayLabel);
+  // };
+  // Handler for Quiz Option Click New
+  const handleQuizAnswer = (answerText: string) => {
+     if (chatMode !== 'quiz') return;
+
+     // (၁) လက်ရှိ Session ထဲက နောက်ဆုံး Quiz မေးခွန်းကို ရှာမယ်
+     const currentSess = sessions.find(s => s.id === currentSessionId);
+     // Message တွေကို ပြောင်းပြန်လှန်ပြီး quizData ပါတဲ့ ပထမဆုံးအရာ (လက်ရှိမေးခွန်း) ကို ယူမယ်
+     const lastQuizMsg = [...(currentSess?.messages || [])].reverse().find(m => m.role === 'model' && m.quizData);
+
+     // Safety Check: မေးခွန်းမရှိရင် ဘာမှမလုပ်ဘူး
+     if (!lastQuizMsg || !lastQuizMsg.quizData) {
+        console.error("Error: No quiz data found to compare.");
+        return;
      }
-     handleSend(prompt, displayLabel);
-  };
+
+     // (၂) အဖြေမှန် တိုက်စစ်ခြင်း (Frontend Logic)
+     const qData = lastQuizMsg.quizData;
+     const correctIndex = qData.correctAnswerIndex; // ဥပမာ: 1 (Index)
+     const correctOptionText = qData.options[correctIndex] || ""; // ဥပမာ: "Phishing"
+
+     // စာလုံးအကြီးအသေး မရွေးအောင် Lowercase ပြောင်းပြီး စစ်မယ်
+     const userClick = answerText.trim().toLowerCase();
+     const correctText = correctOptionText.trim().toLowerCase();
+
+     // Click နှိပ်လိုက်တဲ့စာက အဖြေမှန်စာသားနဲ့ တူမတူ စစ်မယ်
+     // (.includes သုံးတာက "A) Phishing" နဲ့ "Phishing" ကွဲလွဲနေလည်း မှန်အောင်လို့ပါ)
+     const isCorrect = correctText.includes(userClick) || userClick.includes(correctText);
+
+     // (၃) Backend ကို ပို့မည့် စာ (Tag တပ်ပြီးသား)
+     // မှန်ရင် -> "CORRECT:::Phishing"
+     // မှားရင် -> "INCORRECT:::Phishing"
+     const payload = isCorrect ? `CORRECT:::${answerText}` : `INCORRECT:::${answerText}`;
+     
+     const nextCount = quizCount + 1;
+     setQuizCount(nextCount);
+
+     // (၄) Backend သို့ ပို့ခြင်း
+     // ၅ ပုဒ်ပြည့်ပြီးသွားရင် (Question 5 ဖြေပြီးရင်) Summary တောင်းဖို့ အသင့်ပြင်မယ်
+     if (nextCount > 5) {
+        // နောက်ဆုံးမေးခွန်းအဖြေကို ပို့လိုက်မယ် (Backend က အမှတ်မှတ်ထားလိမ့်မယ်)
+        handleSend(payload, answerText);
+        
+        // (Optional) Quiz ပြီးသွားကြောင်း သိသာအောင် ၁ စက္ကန့်နေရင် Result တောင်းမယ်
+        setTimeout(() => {
+            handleSend("Final Summary", "Show My Results");
+        }, 1500);
+     } else {
+        // ပုံမှန် မေးခွန်းဖြေခြင်း
+        handleSend(payload, answerText);
+     }
+  };
 
   // Voice Handling
   const toggleRecording = () => {
