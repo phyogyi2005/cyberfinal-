@@ -300,34 +300,47 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
                              message.toLowerCase().includes("play again");
 
       if (isQuizFinished) {
-        // 🛑 Quiz ပြီးသွားပြီ -> AI ကို ရမှတ်တွက်ခိုင်းမယ်
+        // 🛑 Quiz ပြီးပါပြီ - AI မသုံးဘဲ ရမှတ်တွက်ပါမည်
+
+        // ၁။ Chat History ကို ပြန်ခေါ်မယ် (အနည်းဆုံး ၁၅ ကြောင်းလောက် ယူမယ်)
+        const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(15);
         
-        // Chat History ပြန်ခေါ်မယ် (အဖြေမှန်/မှား စစ်ဖို့)
-        const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(12); // ၅ ပုဒ်စာ လုံလောက်အောင် ၁၂ ခုလောက် ယူမယ်
-        const historyParts = history.reverse().map(m => ({
-          role: m.role,
-          parts: [{ text: m.content }]
-        }));
+        // ၂။ ရမှတ် ရေတွက်ခြင်း Logic
+        let score = 0;
+        const totalQuestions = 5; 
 
-        const instruction = `
-          You are a strict Quiz Grader. 
-          The user has just finished a cybersecurity quiz.
-          1. Analyze the conversation history to count how many questions they answered correctly.
-          2. Calculate the score (e.g., 3/5, 5/5).
-          3. Give a short, encouraging summary of their performance.
-          4. IMPORTANT: End your message with the exact phrase: "Do you want to play again?".
-        `;
-
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash', // Analysis အတွက် AI သုံးမယ်
-          contents: [...historyParts, { role: 'user', parts: [{ text: message }] }],
-          config: { systemInstruction: instruction }
+        history.forEach(msg => {
+            // System (Model) က ပြောခဲ့တဲ့ စကားတွေကိုပဲ စစ်မယ်
+            if (msg.role === 'model') {
+                const text = msg.content.toLowerCase();
+                
+                // "Correct" ပါပြီး "Incorrect" မဟုတ်ရင် အမှတ်ပေးမယ်
+                // (မှတ်ချက်: ခင်ဗျားရဲ့ Quiz System က အဖြေမှန်ရင် "Correct" လို့ စာပြန်ပို့ထားဖို့ လိုပါတယ်)
+                if (text.includes("correct") && !text.includes("incorrect") && !text.includes("not correct")) {
+                    score++;
+                }
+            }
         });
 
-        const rawText = response.text || "Quiz Completed.";
-        
-        aiResponse.content = rawText;
-        aiResponse.type = 'text'; // Quiz UI မပြတော့ဘဲ စာသားပဲ ပြမယ်
+        // (History များသွားလို့ ၅ မှတ်ကျော်နေရင် ၅ နဲ့ ပြန်ဖြတ်မယ်)
+        if (score > 5) score = 5;
+
+        // ၃။ ရမှတ်အလိုက် Feedback စာသား ပြင်ဆင်ခြင်း
+        let feedback = "";
+        if (score === 5) {
+            feedback = "🏆 Excellent! Perfect Score! (ဂုဏ်ယူပါတယ် အားလုံးမှန်ပါတယ်)";
+        } else if (score >= 3) {
+            feedback = "✅ Good job! You passed. (ကောင်းပါတယ်၊ အောင်မှတ်ရပါတယ်)";
+        } else {
+            feedback = "📚 Keep learning! Don't give up. (ထပ်ကြိုးစားပါဦး)";
+        }
+
+        // ၄။ နောက်ဆုံး Output ထုတ်ပေးခြင်း
+        const summary = `🎉 **Quiz Finished!**\n\n📊 **Final Score: ${score} / ${totalQuestions}**\n\n${feedback}\n\n🔄 Do you want to play again?`;
+
+        // ၅။ Frontend ကို ပြန်ပို့ခြင်း
+        aiResponse.content = summary;
+        aiResponse.type = 'text';
 
       } else {
         // 🟢 Quiz ဖြေနေဆဲ -> Database က မေးခွန်းဆက်ထုတ်မယ်
