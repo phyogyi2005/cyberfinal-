@@ -279,19 +279,71 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
 
     let aiResponse: any = { role: 'model', sessionId, timestamp: new Date() };
 
-    if (mode === 'quiz') {
-      const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
-      const nextQuestion = randomResults[0];
+    // if (mode === 'quiz') {
+    //   const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+    //   const nextQuestion = randomResults[0];
       
-      if (!nextQuestion) {
-        aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found in system.";
-        aiResponse.type = 'text';
+    //   if (!nextQuestion) {
+    //     aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found in system.";
+    //     aiResponse.type = 'text';
+    //   } else {
+    //     aiResponse.content = language === 'my' ? "ဤသည်မှာ သင်၏ကျပန်းမေးခွန်းဖြစ်သည်-" : "Here is your random question:";
+    //     aiResponse.type = 'quiz';
+    //     aiResponse.quizData = nextQuestion;
+    //   }
+    // }
+    if (mode === 'quiz') {
+      // (၁) Quiz ပြီးမပြီး စစ်ဆေးခြင်း
+      // App.tsx က ၅ ပုဒ်ပြည့်ရင် "Grade this answer" သို့မဟုတ် "final summary" ဆိုတဲ့ စာပို့ပါလိမ့်မယ်
+      const isQuizFinished = message.includes("Grade this answer") || 
+                             message.includes("final summary") ||
+                             message.toLowerCase().includes("play again");
+
+      if (isQuizFinished) {
+        // 🛑 Quiz ပြီးသွားပြီ -> AI ကို ရမှတ်တွက်ခိုင်းမယ်
+        
+        // Chat History ပြန်ခေါ်မယ် (အဖြေမှန်/မှား စစ်ဖို့)
+        const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(12); // ၅ ပုဒ်စာ လုံလောက်အောင် ၁၂ ခုလောက် ယူမယ်
+        const historyParts = history.reverse().map(m => ({
+          role: m.role,
+          parts: [{ text: m.content }]
+        }));
+
+        const instruction = `
+          You are a strict Quiz Grader. 
+          The user has just finished a cybersecurity quiz.
+          1. Analyze the conversation history to count how many questions they answered correctly.
+          2. Calculate the score (e.g., 3/5, 5/5).
+          3. Give a short, encouraging summary of their performance.
+          4. IMPORTANT: End your message with the exact phrase: "Do you want to play again?".
+        `;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash', // Analysis အတွက် AI သုံးမယ်
+          contents: [...historyParts, { role: 'user', parts: [{ text: message }] }],
+          config: { systemInstruction: instruction }
+        });
+
+        const rawText = response.text || "Quiz Completed.";
+        
+        aiResponse.content = rawText;
+        aiResponse.type = 'text'; // Quiz UI မပြတော့ဘဲ စာသားပဲ ပြမယ်
+
       } else {
-        aiResponse.content = language === 'my' ? "ဤသည်မှာ သင်၏ကျပန်းမေးခွန်းဖြစ်သည်-" : "Here is your random question:";
-        aiResponse.type = 'quiz';
-        aiResponse.quizData = nextQuestion;
+        // 🟢 Quiz ဖြေနေဆဲ -> Database က မေးခွန်းဆက်ထုတ်မယ်
+        const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+        const nextQuestion = randomResults[0];
+        
+        if (!nextQuestion) {
+          aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found in system.";
+          aiResponse.type = 'text';
+        } else {
+          aiResponse.content = language === 'my' ? "ဤသည်မှာ သင်၏ကျပန်းမေးခွန်းဖြစ်သည်-" : "Here is your random question:";
+          aiResponse.type = 'quiz';
+          aiResponse.quizData = nextQuestion;
+        }
       }
-    } 
+    }
     else {
       const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
       const historyParts = history.reverse().map(m => ({
