@@ -292,66 +292,140 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     //     aiResponse.quizData = nextQuestion;
     //   }
     // }
+    // if (mode === 'quiz') {
+    //   // (၁) Quiz ပြီးမပြီး စစ်ဆေးခြင်း
+    //   // App.tsx က ၅ ပုဒ်ပြည့်ရင် "Grade this answer" သို့မဟုတ် "final summary" ဆိုတဲ့ စာပို့ပါလိမ့်မယ်
+    //   const isQuizFinished = message.includes("Grade this answer") || 
+    //                          message.includes("final summary") ||
+    //                          message.toLowerCase().includes("play again");
+
+    //   if (isQuizFinished) {
+    //     // 🛑 Quiz ပြီးပါပြီ - AI မသုံးဘဲ ရမှတ်တွက်ပါမည်
+
+    //     // ၁။ Chat History ကို ပြန်ခေါ်မယ် (အနည်းဆုံး ၁၅ ကြောင်းလောက် ယူမယ်)
+    //     const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(15);
+        
+    //     // ၂။ ရမှတ် ရေတွက်ခြင်း Logic
+    //     let score = 0;
+    //     const totalQuestions = 5; 
+
+    //     history.forEach(msg => {
+    //         // System (Model) က ပြောခဲ့တဲ့ စကားတွေကိုပဲ စစ်မယ်
+    //         if (msg.role === 'model') {
+    //             const text = msg.content.toLowerCase();
+                
+    //             // "Correct" ပါပြီး "Incorrect" မဟုတ်ရင် အမှတ်ပေးမယ်
+    //             // (မှတ်ချက်: ခင်ဗျားရဲ့ Quiz System က အဖြေမှန်ရင် "Correct" လို့ စာပြန်ပို့ထားဖို့ လိုပါတယ်)
+    //             if (text.includes("correct") && !text.includes("incorrect") && !text.includes("not correct")) {
+    //                 score++;
+    //             }
+    //         }
+    //     });
+
+    //     // (History များသွားလို့ ၅ မှတ်ကျော်နေရင် ၅ နဲ့ ပြန်ဖြတ်မယ်)
+    //     if (score > 5) score = 5;
+
+    //     // ၃။ ရမှတ်အလိုက် Feedback စာသား ပြင်ဆင်ခြင်း
+    //     let feedback = "";
+    //     if (score === 5) {
+    //         feedback = "🏆 Excellent! Perfect Score! (ဂုဏ်ယူပါတယ် အားလုံးမှန်ပါတယ်)";
+    //     } else if (score >= 3) {
+    //         feedback = "✅ Good job! You passed. (ကောင်းပါတယ်၊ အောင်မှတ်ရပါတယ်)";
+    //     } else {
+    //         feedback = "📚 Keep learning! Don't give up. (ထပ်ကြိုးစားပါဦး)";
+    //     }
+
+    //     // ၄။ နောက်ဆုံး Output ထုတ်ပေးခြင်း
+    //     const summary = `🎉 **Quiz Finished!**\n\n📊 **Final Score: ${score} / ${totalQuestions}**\n\n${feedback}\n\n🔄 Do you want to play again?`;
+
+    //     // ၅။ Frontend ကို ပြန်ပို့ခြင်း
+    //     aiResponse.content = summary;
+    //     aiResponse.type = 'text';
+
+    //   } else {
+    //     // 🟢 Quiz ဖြေနေဆဲ -> Database က မေးခွန်းဆက်ထုတ်မယ်
+    //     const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+    //     const nextQuestion = randomResults[0];
+        
+    //     if (!nextQuestion) {
+    //       aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found in system.";
+    //       aiResponse.type = 'text';
+    //     } else {
+    //       aiResponse.content = language === 'my' ? "ဤသည်မှာ သင်၏ကျပန်းမေးခွန်းဖြစ်သည်-" : "Here is your random question:";
+    //       aiResponse.type = 'quiz';
+    //       aiResponse.quizData = nextQuestion;
+    //     }
+    //   }
+    // }
     if (mode === 'quiz') {
-      // (၁) Quiz ပြီးမပြီး စစ်ဆေးခြင်း
-      // App.tsx က ၅ ပုဒ်ပြည့်ရင် "Grade this answer" သို့မဟုတ် "final summary" ဆိုတဲ့ စာပို့ပါလိမ့်မယ်
-      const isQuizFinished = message.includes("Grade this answer") || 
-                             message.includes("final summary") ||
+      // (၁) Quiz ပြီးမပြီး စစ်ဆေးခြင်း ("Final Summary" သို့မဟုတ် "Show My Results" ပါလာရင် ပြီးပြီ)
+      const isQuizFinished = message.toLowerCase().includes("final summary") || 
+                             message.toLowerCase().includes("show my results") ||
                              message.toLowerCase().includes("play again");
 
       if (isQuizFinished) {
-        // 🛑 Quiz ပြီးပါပြီ - AI မသုံးဘဲ ရမှတ်တွက်ပါမည်
-
-        // ၁။ Chat History ကို ပြန်ခေါ်မယ် (အနည်းဆုံး ၁၅ ကြောင်းလောက် ယူမယ်)
+        // 🛑 Quiz ပြီးပါပြီ - ရမှတ်တွက်ထုတ်ပေးမယ် (Rule-Based)
+        
+        // Chat History ကို ပြန်ခေါ်မယ် (၁၅ ကြောင်းလောက်ဆို ၅ ပုဒ်စာ လုံလောက်ပါတယ်)
         const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(15);
         
-        // ၂။ ရမှတ် ရေတွက်ခြင်း Logic
         let score = 0;
         const totalQuestions = 5; 
 
+        // History ထဲမှာ "Correct!" လို့ System က ပြောခဲ့တာ ဘယ်နှခါလဲ ရေတွက်မယ်
         history.forEach(msg => {
-            // System (Model) က ပြောခဲ့တဲ့ စကားတွေကိုပဲ စစ်မယ်
             if (msg.role === 'model') {
-                const text = msg.content.toLowerCase();
-                
-                // "Correct" ပါပြီး "Incorrect" မဟုတ်ရင် အမှတ်ပေးမယ်
-                // (မှတ်ချက်: ခင်ဗျားရဲ့ Quiz System က အဖြေမှန်ရင် "Correct" လို့ စာပြန်ပို့ထားဖို့ လိုပါတယ်)
-                if (text.includes("correct") && !text.includes("incorrect") && !text.includes("not correct")) {
+                const text = msg.content;
+                // "✅ Correct!" ဆိုတဲ့ စာလုံးပါရင် အမှတ်တိုးမယ်
+                if (text.includes("✅ Correct!")) {
                     score++;
                 }
             }
         });
 
-        // (History များသွားလို့ ၅ မှတ်ကျော်နေရင် ၅ နဲ့ ပြန်ဖြတ်မယ်)
+        // (တခါတလေ History များသွားရင် ၅ ကျော်တတ်လို့ ပြန်ထိန်းမယ်)
         if (score > 5) score = 5;
 
-        // ၃။ ရမှတ်အလိုက် Feedback စာသား ပြင်ဆင်ခြင်း
+        // Feedback စာသား
         let feedback = "";
-        if (score === 5) {
-            feedback = "🏆 Excellent! Perfect Score! (ဂုဏ်ယူပါတယ် အားလုံးမှန်ပါတယ်)";
-        } else if (score >= 3) {
-            feedback = "✅ Good job! You passed. (ကောင်းပါတယ်၊ အောင်မှတ်ရပါတယ်)";
-        } else {
-            feedback = "📚 Keep learning! Don't give up. (ထပ်ကြိုးစားပါဦး)";
-        }
+        if (score === 5) feedback = "🏆 Perfect Score! You are a Cyber Expert!";
+        else if (score >= 3) feedback = "✅ Good Job! You passed.";
+        else feedback = "📚 Keep learning! Try again.";
 
-        // ၄။ နောက်ဆုံး Output ထုတ်ပေးခြင်း
-        const summary = `🎉 **Quiz Finished!**\n\n📊 **Final Score: ${score} / ${totalQuestions}**\n\n${feedback}\n\n🔄 Do you want to play again?`;
-
-        // ၅။ Frontend ကို ပြန်ပို့ခြင်း
-        aiResponse.content = summary;
+        aiResponse.content = `🎉 **Quiz Completed!**\n\n📊 **Final Score: ${score} / ${totalQuestions}**\n${feedback}\n\n🔄 Type "Start" to play again.`;
         aiResponse.type = 'text';
 
       } else {
-        // 🟢 Quiz ဖြေနေဆဲ -> Database က မေးခွန်းဆက်ထုတ်မယ်
+        // 🟢 Quiz ဖြေနေဆဲ -> (၁) အဖြေစစ်မယ် (၂) မေးခွန်းထုတ်မယ်
+
+        let feedback = "";
+        let cleanMessage = message; 
+
+        // (၁) Frontend က ပို့လိုက်တဲ့ Tag ကို စစ်ဆေးခြင်း
+        if (message.includes("CORRECT:::")) {
+            feedback = "✅ Correct! (မှန်ပါတယ်)\n\n";
+            cleanMessage = message.replace("CORRECT:::", ""); // Tag ဖြုတ်မယ်
+        } 
+        else if (message.includes("INCORRECT:::")) {
+            feedback = "❌ Incorrect. (မှားပါတယ်)\n\n";
+            cleanMessage = message.replace("INCORRECT:::", ""); // Tag ဖြုတ်မယ်
+        }
+
+        // (၂) User Message ကို Database မှာ အသန့်ပြန်သိမ်းမယ် (Tag တွေ မမြင်ရအောင်)
+        // အပေါ်မှာ save ပြီးသား userMsg ကို Update လုပ်တာပါ
+        await Message.findByIdAndUpdate(userMsg._id, { content: cleanMessage });
+
+        // (၃) နောက်မေးခွန်းတစ်ခု Database မှ ယူမယ်
         const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
         const nextQuestion = randomResults[0];
         
         if (!nextQuestion) {
-          aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found in system.";
+          aiResponse.content = language === 'my' ? "စနစ်အတွင်း ပဟေဠိမေးခွန်းများ မတွေ့ရှိပါ။" : "No quiz questions found.";
           aiResponse.type = 'text';
         } else {
-          aiResponse.content = language === 'my' ? "ဤသည်မှာ သင်၏ကျပန်းမေးခွန်းဖြစ်သည်-" : "Here is your random question:";
+          // Feedback ကို ရှေ့ဆုံးက ထည့်ပေးလိုက်မယ်
+          // အရေးကြီးချက်: ဒီ "✅ Correct!" စာလုံးကို Score တွက်တဲ့ Logic က ပြန်ရေတွက်မှာပါ
+          aiResponse.content = `${feedback}${language === 'my' ? "နောက်မေးခွန်းမှာ-" : "Here is your next question:"}`;
           aiResponse.type = 'quiz';
           aiResponse.quizData = nextQuestion;
         }
