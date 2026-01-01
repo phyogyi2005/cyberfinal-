@@ -3,7 +3,7 @@ import { Auth } from './components/Auth';
 import { ChatMessage } from './components/ChatMessage';
 import { api } from './services/geminiService';
 import { User, Message, ChatSession, MessageType, Attachment, ChatMode } from './types';
-
+/////
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
