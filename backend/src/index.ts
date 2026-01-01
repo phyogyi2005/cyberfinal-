@@ -244,16 +244,30 @@ app.get('/api/sessions', authenticateToken, async (req: any, res) => {
   }
 });
 
+// app.post('/api/sessions', authenticateToken, async (req: any, res) => {
+//   try {
+//     const session = new Session({ userId: req.user.id, title: req.body.title || 'New Conversation', mode: req.body.mode || 'normal' });
+//     await session.save();
+//     res.json(session);
+//   } catch (err: any) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 app.post('/api/sessions', authenticateToken, async (req: any, res) => {
   try {
-    const session = new Session({ userId: req.user.id, title: req.body.title || 'New Conversation', mode: req.body.mode || 'normal' });
+    const session = new Session({ 
+        // 👇 ဒီလိုင်း လိုနေတာပါ (Schema မှာ String required ဆိုတော့ ဒါထည့်မှရမယ်)
+        _id: Date.now().toString(), 
+        userId: req.user.id, 
+        title: req.body.title || 'New Conversation', 
+        mode: req.body.mode || 'normal' 
+    });
     await session.save();
     res.json(session);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.get('/api/sessions/:id/messages', authenticateToken, async (req: any, res) => {
   try {
     const messages = await Message.find({ sessionId: req.params.id }).sort({ timestamp: 1 });
