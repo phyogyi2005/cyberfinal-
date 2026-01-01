@@ -577,15 +577,15 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
           //         aiResponse.type = 'quiz';
           //         aiResponse.quizData = nextQuestion;
           //       }
-            }
-          } 
+          //   }
+          // } 
           // Quiz မစရသေးခင် တခြားစာရိုက်ရင်
-          else {
-             aiResponse.content = "Please type 'Start' to begin the quiz.";
-             aiResponse.type = 'text';
-          }
-      }
-    }
+    //       else {
+    //          aiResponse.content = "Please type 'Start' to begin the quiz.";
+    //          aiResponse.type = 'text';
+    //       }
+    //   }
+    // }
     // (A) အရင်မေးခွန်းကို ပြန်ရှာပြီး အဖြေတိုက်စစ်မယ်
           // const lastSystemMsg = await Message.findOne({ 
           //   sessionId, 
@@ -651,10 +651,10 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
           //   }
           // } 
           // // Quiz မစရသေးခင်
-          else {
-             aiResponse.content = "Please type 'Start' to begin the quiz.";
-             aiResponse.type = 'text';
-          }
+          // else {
+          //    aiResponse.content = "Please type 'Start' to begin the quiz.";
+          //    aiResponse.type = 'text';
+          // }
     else {
       const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
       const historyParts = history.reverse().map(m => ({
