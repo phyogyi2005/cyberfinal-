@@ -406,6 +406,12 @@ if (correctText.length > 0 && userMsg.length > 0) {
              aiResponse.type = 'text';
           }
       }
+    
+      const savedQuizMsg = new Message(aiResponse);
+      await savedQuizMsg.save();
+      
+      // ဒီမှာ return လုပ်လိုက်မှ အောက်က AI ဆီ မရောက်တော့မှာပါ
+      return res.json(savedQuizMsg);
     }
     // ... Inside your main chat function ...
 
