@@ -346,7 +346,7 @@ function App() {
   const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
     if (mode === 'quiz') {
-      handleSend("Start Quiz");
+      handleSend("Start Quiz",'quiz');
     } else if (mode === 'analysis') {
       setInput("");
       handleSend("Analysis Mode Started. Upload a file or paste a URL.");
