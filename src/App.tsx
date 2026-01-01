@@ -59,24 +59,43 @@ function App() {
 
   const loadSessions = async (tokenOverride?: string) => {
     try {
-      // Pass token if available to ensure auth works
-      const data = await api.getSessions(tokenOverride); 
-      setSessions(data);
-
-      // If we have sessions but none selected, select the first (most recent)
-      if (data.length > 0 && !currentSessionId) {
-        const firstId = data[0]._id || data[0].id;
-        setCurrentSessionId(firstId);
-        
-        // Restore mode from session if available
-        if (data[0].mode) setChatMode(data[0].mode as ChatMode);
-      } 
-      // If no history exists, create a new session automatically
-      else if (data.length === 0) {
-        createNewSession();
+      // 1. Ensure we have a token (Check override OR localStorage)
+      const token = tokenOverride || localStorage.getItem('cyber_token');
+      if (!token) {
+        console.error("No token found, cannot load sessions.");
+        return;
       }
+
+      // 2. Fetch Sessions from Database
+      // Note: We pass the token explicitly to ensure the API call succeeds
+      const data = await api.getSessions(token); 
+      
+      // 3. Check if we received valid history
+      if (Array.isArray(data) && data.length > 0) {
+        setSessions(data);
+
+        // If no session is currently selected, select the first one
+        if (!currentSessionId) {
+          const firstId = data[0]._id || data[0].id;
+          setCurrentSessionId(firstId);
+          
+          // Restore the Chat Mode (e.g., Quiz, Analysis)
+          if (data[0].mode) setChatMode(data[0].mode as ChatMode);
+        }
+      } 
+      // 4. IMPORTANT: If History is Empty (New User or ID Mismatch)
+      else {
+        console.log("No history found (or ID mismatch). Creating new session...");
+        // ✅ FIX: Added 'await' to ensure the UI updates before finishing
+        await createNewSession(); 
+      }
+
     } catch (e) {
       console.error("Session Load Error", e);
+      // 5. Fallback: If API fails, create a local session so the UI isn't empty
+      if (sessions.length === 0) {
+          await createNewSession();
+      }
     }
   };
 
