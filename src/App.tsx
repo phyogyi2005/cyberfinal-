@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Auth } from './components/Auth';
 import { ChatMessage } from './components/ChatMessage';
@@ -6,55 +5,75 @@ import { api } from './services/geminiService';
 import { User, Message, ChatSession, MessageType, Attachment, ChatMode } from './types';
 
 function App() {
+  // --- STATE MANAGEMENT ---
   const [user, setUser] = useState<User | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<Attachment[]>([]); // ✅ Fixed: Added back
   const [isLoading, setIsLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // Default to dark for that cyber look
+  const [isRecording, setIsRecording] = useState(false); // ✅ Fixed: Added back
+  
+  const [darkMode, setDarkMode] = useState(true);
   const [language, setLanguage] = useState<'en' | 'my'>('en');
   const [chatMode, setChatMode] = useState<ChatMode>('normal');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
+  // --- REFS ---
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // ✅ Fixed: Added back
 
-  // Initial Load (Theme, User & History Fetch)
+  // --- 1. INITIAL LOAD (Auth & History) ---
   useEffect(() => {
-    // 1. Theme Check
+    // Theme Check
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setDarkMode(true);
     }
 
-    // 2. User & Token Check
-    // (မှတ်ချက်: LocalStorage Key နာမည် မှန်ကန်ကြောင်း စစ်ဆေးပါ)
-    const storedUser = localStorage.getItem('cyberguard_user'); 
+    // User & Token Check
+    const storedUser = localStorage.getItem('cyberguard_user');
     const storedToken = localStorage.getItem('cyber_token');
 
     if (storedUser && storedToken) {
        setUser(JSON.parse(storedUser));
-       
-       // 👇 အရေးကြီးဆုံးအချက်: Token ကို parameter အနေနဲ့ ထည့်ပေးရပါမယ်
-       fetchSessions(storedToken); 
+       // Load history immediately using the token
+       loadSessions(storedToken); 
     }
   }, []);
 
+  // --- 2. LOAD MESSAGES ON SESSION CHANGE ---
   useEffect(() => {
     if (currentSessionId) {
       loadMessages(currentSessionId);
     }
   }, [currentSessionId]);
 
+  // --- 3. AUTO SCROLL ---
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, attachments]); // Scroll when attachments added too
 
-  const loadSessions = async () => {
+  // --- API HELPER FUNCTIONS ---
+
+  const loadSessions = async (tokenOverride?: string) => {
     try {
-      const data = await api.getSessions();
+      // Pass token if available to ensure auth works
+      const data = await api.getSessions(tokenOverride); 
       setSessions(data);
+
+      // If we have sessions but none selected, select the first (most recent)
       if (data.length > 0 && !currentSessionId) {
-        setCurrentSessionId(data[0]._id || data[0].id);
+        const firstId = data[0]._id || data[0].id;
+        setCurrentSessionId(firstId);
+        
+        // Restore mode from session if available
+        if (data[0].mode) setChatMode(data[0].mode as ChatMode);
+      } 
+      // If no history exists, create a new session automatically
+      else if (data.length === 0) {
+        createNewSession();
       }
     } catch (e) {
       console.error("Session Load Error", e);
@@ -62,27 +81,21 @@ function App() {
   };
 
   const loadMessages = async (id: string) => {
+    setIsLoading(true);
     try {
       const data = await api.getMessages(id);
       setMessages(data);
+      
+      // Update mode based on current session data
+      const currentSession = sessions.find(s => (s._id || s.id) === id);
+      if (currentSession && currentSession.mode) {
+          setChatMode(currentSession.mode as ChatMode);
+      }
     } catch (e) {
       console.error("Messages Load Error", e);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleLogin = (userData: User, token: string) => {
-    setUser(userData);
-    localStorage.setItem('cyberguard_user', JSON.stringify(userData));
-    localStorage.setItem('cyber_token', token);
-    loadSessions();
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    setUser(null);
-    setSessions([]);
-    setMessages([]);
-    setCurrentSessionId(null);
   };
 
   const createNewSession = async (mode: ChatMode = 'normal') => {
@@ -97,36 +110,149 @@ function App() {
     }
   };
 
+  // --- AUTH HANDLERS ---
+
+  const handleLogin = (userData: User, token: string) => {
+    setUser(userData);
+    localStorage.setItem('cyberguard_user', JSON.stringify(userData));
+    localStorage.setItem('cyber_token', token);
+    loadSessions(token);
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setUser(null);
+    setSessions([]);
+    setMessages([]);
+    setCurrentSessionId(null);
+  };
+
+  // --- INPUT HANDLERS (Voice & File) ---
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = (reader.result as string)?.split(',')[1];
+        if (base64String) {
+            setAttachments([...attachments, {
+            name: file.name,
+            mimeType: file.type,
+            type: file.type.startsWith('image/') ? 'image' : 'file',
+            data: base64String
+            }]);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsRecording(true);
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === 'my' ? 'my-MM' : 'en-US';
+      recognition.onresult = (event: any) => {
+        const text = event.results[0][0].transcript;
+        setInput(text);
+        setIsRecording(false);
+      };
+      recognition.onerror = () => setIsRecording(false);
+      recognition.onend = () => setIsRecording(false);
+      recognition.start();
+    } else {
+      alert("Speech recognition not supported in this browser.");
+    }
+  };
+
+  // --- CORE SEND LOGIC ---
+
   const handleSend = async (textOverride?: string) => {
     const text = textOverride || input;
-    if (!text.trim() || !currentSessionId || !user) return;
+    
+    // Prevent empty send unless there is an attachment
+    if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
 
+    // 1. Optimistic Update (Show user message immediately)
     const optimisticMsg: any = {
       role: 'user',
       content: text,
       type: MessageType.TEXT,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      attachments: textOverride ? [] : [...attachments] // Attach files only to manual input
     };
     
     setMessages(prev => [...prev, optimisticMsg]);
-    if (!textOverride) setInput('');
+    
+    // Clear input states
+    if (!textOverride) {
+        setInput('');
+        setAttachments([]);
+    }
     setIsLoading(true);
 
     try {
+      // 2. API Call
       const response = await api.sendMessage({
         sessionId: currentSessionId,
         message: text,
         userLevel: user.knowledgeLevel,
         language,
-        mode: chatMode
+        mode: chatMode,
+        attachments: textOverride ? [] : attachments // Pass attachments to API
       });
+      
       setMessages(prev => [...prev, response]);
-      setTimeout(loadSessions, 500);
+      
+      // Refresh session list to update titles or lastUpdated
+      // setTimeout(() => loadSessions(), 1000); 
     } catch (error: any) {
       console.error(error);
+      // Optional: Add error message to chat
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // --- QUIZ LOGIC (Frontend Check + Backend Tagging) ---
+
+  const handleQuizAnswer = (answerText: string) => {
+     if (chatMode !== 'quiz') return;
+
+     // Find the last quiz question asked by the model
+     const lastQuizMsg = [...messages].reverse().find(m => m.role === 'model' && m.quizData);
+
+     if (!lastQuizMsg || !lastQuizMsg.quizData) {
+        // Fallback: just send the text
+        handleSend(answerText);
+        return;
+     }
+
+     const qData = lastQuizMsg.quizData;
+     const correctIndex = qData.correctAnswerIndex;
+     const correctOptionText = qData.options[correctIndex] || "";
+
+     // Check Answer Logic
+     const userClick = answerText.trim().toLowerCase();
+     const correctText = correctOptionText.trim().toLowerCase();
+     
+     // Determine Correctness
+     const isCorrect = correctText.includes(userClick) || userClick.includes(correctText);
+
+     // Create Tagged Payload for Backend
+     const payload = isCorrect ? `CORRECT:::${answerText}` : `INCORRECT:::${answerText}`;
+     
+     // Send hidden payload, but UI shows just the answer via optimistic update in handleSend
+     handleSend(payload);
   };
 
   const handleModeChange = (mode: ChatMode) => {
@@ -134,9 +260,12 @@ function App() {
     if (mode === 'quiz') {
       handleSend("Start Quiz");
     } else if (mode === 'analysis') {
-      handleSend("Perform Security Check for http://g00gle.com");
+      setInput("");
+      handleSend("Analysis Mode Started. Upload a file or paste a URL.");
     }
   };
+
+  // --- RENDER ---
 
   if (!user) return <Auth onLogin={handleLogin} />;
 
@@ -158,14 +287,19 @@ function App() {
           {sessions.map(s => (
             <button 
               key={s._id || s.id} 
-              onClick={() => setCurrentSessionId(s._id || s.id)} 
+              onClick={() => {
+                  setCurrentSessionId(s._id || s.id);
+                  if (window.innerWidth < 768) setSidebarOpen(false); // Close on mobile
+              }} 
               className={`w-full text-left px-3 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider truncate transition-all flex items-center gap-3 ${
                 currentSessionId === (s._id || s.id) 
                   ? 'bg-blue-500/10 text-blue-500' 
                   : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
-              <span className="material-icons text-[14px] opacity-40">chat_bubble_outline</span>
+              <span className="material-icons text-[14px] opacity-40">
+                {s.mode === 'quiz' ? 'psychology' : s.mode === 'analysis' ? 'radar' : 'chat_bubble_outline'}
+              </span>
               {s.title}
             </button>
           ))}
@@ -191,8 +325,12 @@ function App() {
       <div className="flex-1 flex flex-col min-w-0 h-full">
         
         {/* Header */}
-        <header className="h-20 shrink-0 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 bg-white dark:bg-slate-900/50 backdrop-blur-xl z-10">
+        <header className="h-20 shrink-0 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 bg-white dark:bg-slate-900/50 backdrop-blur-xl z-10">
           <div className="flex items-center gap-4">
+             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-slate-500">
+                <span className="material-icons">menu</span>
+             </button>
+
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <span className="material-icons text-white text-xl">security</span>
             </div>
@@ -200,12 +338,12 @@ function App() {
               <h1 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-tighter">Cyber Advisor</h1>
               <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                CURRENT MODE: {chatMode.toUpperCase()}
+                MODE: {chatMode.toUpperCase()}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
              <button 
                onClick={() => setLanguage(l => l === 'en' ? 'my' : 'en')}
                className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 gap-2 hover:bg-slate-200 transition-all"
@@ -220,25 +358,34 @@ function App() {
         </header>
 
         {/* Chat History */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-hide bg-slate-50/30 dark:bg-[#020617]">
+        <div className="flex-1 overflow-y-auto p-4 md:p-10 scrollbar-hide bg-slate-50/30 dark:bg-[#020617]">
           <div className="max-w-4xl mx-auto">
-            {messages.map((m, idx) => (
-              <ChatMessage 
-                key={m._id || m.id || idx} 
-                message={m} 
-                language={language} 
-                userName={user.name} 
-                onQuizAnswer={(ans) => handleSend(ans)}
-              />
-            ))}
+            {messages.length > 0 ? (
+                messages.map((m, idx) => (
+                <ChatMessage 
+                    key={m._id || m.id || idx} 
+                    message={m} 
+                    language={language} 
+                    userName={user.name} 
+                    onQuizAnswer={handleQuizAnswer} // ✅ Fixed: Passed correctly
+                    onExplainRequest={(txt) => handleSend(txt)}
+                />
+                ))
+            ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 py-20">
+                    <span className="material-icons text-6xl mb-4">forum</span>
+                    <p className="uppercase tracking-widest font-bold text-xs">Start a conversation</p>
+                </div>
+            )}
+            
             {isLoading && (
-              <div className="flex items-center gap-3 ml-2">
+              <div className="flex items-center gap-3 ml-2 mt-4">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
                   <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></span>
                   <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></span>
                 </div>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Analyzing threat vector...</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Processing...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -246,11 +393,11 @@ function App() {
         </div>
 
         {/* Bottom Input */}
-        <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-          <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+          <div className="max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
             
             {/* Mode Pills */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 md:gap-3">
               {[
                 { id: 'normal', icon: 'forum', label: 'Consult', color: 'bg-blue-600 text-white shadow-blue-500/20' },
                 { id: 'quiz', icon: 'psychology', label: 'Drill', color: 'bg-emerald-600 text-white shadow-emerald-500/20' },
@@ -260,8 +407,8 @@ function App() {
                 <button
                   key={m.id}
                   onClick={() => handleModeChange(m.id as ChatMode)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    chatMode === m.id ? `${m.color} shadow-lg scale-105` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    chatMode === m.id ? `${m.color} shadow-lg scale-105` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   <span className="material-icons text-sm">{m.icon}</span>
@@ -270,26 +417,56 @@ function App() {
               ))}
             </div>
 
+            {/* Attachments Preview */}
+            {attachments.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {attachments.map((att, i) => (
+                    <div key={i} className="relative bg-slate-100 dark:bg-slate-800 rounded-lg p-2 flex items-center gap-2 min-w-fit border border-slate-200 dark:border-slate-700">
+                       <span className="material-icons text-sm text-blue-500">
+                         {att.type === 'image' ? 'image' : 'description'}
+                       </span>
+                       <span className="text-[10px] font-bold dark:text-slate-300 max-w-[100px] truncate">{att.name}</span>
+                       <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500">
+                         <span className="material-icons text-sm">close</span>
+                       </button>
+                    </div>
+                  ))}
+                </div>
+            )}
+
             {/* Input Field */}
-            <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 rounded-2xl px-6 py-4 border border-slate-100 dark:border-slate-700 shadow-inner">
-              <button className="text-slate-400 hover:text-blue-500 transition-colors">
-                <span className="material-icons">add_circle_outline</span>
+            <div className="flex items-center gap-2 md:gap-4 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-slate-100 dark:border-slate-700 shadow-inner focus-within:ring-2 ring-blue-500/50 transition-all">
+              
+              {/* File Upload Button */}
+              <button onClick={() => fileInputRef.current?.click()} className="text-slate-400 hover:text-blue-500 transition-colors">
+                 <span className="material-icons">attach_file</span>
               </button>
+              <input 
+                 type="file" 
+                 ref={fileInputRef} 
+                 className="hidden" 
+                 onChange={handleFileSelect}
+                 accept=".jpg,.jpeg,.png,.pdf,.txt,.log"
+              />
+
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={chatMode === 'analysis' ? "Paste URL or drop file for deep scan..." : "Ask your advisor anything..."}
-                className="flex-1 bg-transparent border-none outline-none text-sm font-medium dark:text-white placeholder:text-slate-500"
+                placeholder={chatMode === 'analysis' ? "Paste URL or drop file for deep scan..." : "Ask your advisor..."}
+                className="flex-1 bg-transparent border-none outline-none text-sm font-medium dark:text-white placeholder:text-slate-500 min-w-0"
               />
-              <button className="text-slate-400 hover:text-blue-500 transition-colors">
-                <span className="material-icons">keyboard_voice</span>
+              
+              {/* Mic Button */}
+              <button onClick={toggleRecording} className={`transition-colors ${isRecording ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-blue-500'}`}>
+                <span className="material-icons">{isRecording ? 'mic' : 'mic_none'}</span>
               </button>
+
               <button 
                 onClick={() => handleSend()}
-                disabled={!input.trim()}
-                className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center disabled:opacity-50 shadow-lg shadow-blue-600/30 hover:scale-110 transition-transform"
+                disabled={!input.trim() && attachments.length === 0}
+                className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center disabled:opacity-50 shadow-lg shadow-blue-600/30 hover:scale-110 transition-transform flex-shrink-0"
               >
                 <span className="material-icons text-base">send</span>
               </button>
