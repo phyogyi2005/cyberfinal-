@@ -291,7 +291,7 @@ function App() {
 
   // --- QUIZ LOGIC (Frontend Check + Backend Tagging) ---
 
-  const handleQuizAnswer = (answerText: string) => {
+  const handleQuizAnswer = async(answerText: string) => {
      if (chatMode !== 'quiz') return;
 
      // Find the last quiz question asked by the model
@@ -321,7 +321,7 @@ function App() {
      handleSend(payload);
   };
 
-  const handleModeChange = (mode: ChatMode) => {
+  const handleModeChange = async(mode: ChatMode) => {
     setChatMode(mode);
     if (mode === 'quiz') {
       handleSend("Start Quiz");
