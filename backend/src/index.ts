@@ -447,7 +447,6 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       // -----------------------------------------------------------
       else {
           let feedback = "";
-          
           // (A) အရင်မေးခွန်းကို ပြန်ရှာပြီး အဖြေတိုက်စစ်မယ်
           const lastSystemMsg = await Message.findOne({ 
             sessionId, 
@@ -463,36 +462,41 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
             // တိုက်စစ်မယ်
             const userMsg = lowerMsg.trim();
             const correctText = correctOptionText.trim().toLowerCase();
-            const isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
+            
+            // ⚠️ FIX 1: အဖြေမှန်စာသား ရှိမှသာ စစ်မယ် (မရှိရင် false)
+            // ဒါမှ "".includes("") ကြောင့် အမြဲမှန်နေတဲ့ ပြဿနာ ရှင်းသွားမယ်
+            let isCorrect = false;
+            if (correctText.length > 0 && userMsg.length > 0) {
+                isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
+            }
 
             if (isCorrect) {
                 feedback = "✅ **Correct!**\n\n";
+                // အမှတ်တိုးမယ် (await သုံးပြီး ပြီးသည်အထိ စောင့်မယ်)
                 await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
             } else {
                 feedback = `❌ **Incorrect.** The answer was: *${correctOptionText}*.\n\n`;
             }
 
             // (B) မေးခွန်းအရေအတွက် တိုးမယ် (+1)
-            const updatedSession = await Session.findByIdAndUpdate(
-                sessionId, 
-                { $inc: { questionCount: 1 } }, 
-                { new: true } 
-            );
+            await Session.findByIdAndUpdate(sessionId, { $inc: { questionCount: 1 } });
 
-            const currentCount = updatedSession?.questionCount || 0;
-            const currentScore = updatedSession?.score || 0; 
+            // ⚠️ FIX 2 (CRITICAL): Update လုပ်ပြီးသား Session အခြေအနေမှန်ကို အသစ်ပြန်ဆွဲထုတ်မယ်
+            // ဒီလိုလုပ်မှ အမှတ်အစစ်ကို ရမှာပါ
+            const freshSession = await Session.findById(sessionId);
+            const currentCount = freshSession?.questionCount || 0;
+            const currentScore = freshSession?.score || 0; 
 
             // (C) ၅ ပုဒ် ပြည့်ပြီလား?
             if (currentCount >= 5) {
-                // 🛑 ၅ ပုဒ်ပြည့်ပြီ -> Result ပြပြီး မေးခွန်းထုတ်မယ်
+                // 🛑 ၅ ပုဒ်ပြည့်ပြီ -> Result ပြ
                 let finalComment = "";
                 if (currentScore >= 5) finalComment = "🏆 **Perfect!** You are a Cyber Expert!";
                 else if (currentScore >= 3) finalComment = "✅ **Good Job!** You passed.";
                 else finalComment = "📚 **Keep Learning!**";
 
-                // 👇 ဒီစာသားက အရေးကြီးဆုံးပါ (မေးခွန်းမေးတဲ့အပိုင်း)
                 aiResponse.content = `${feedback}🎉 **Round Completed!**\n\n📊 **Score: ${currentScore} / 5**\n${finalComment}\n\n❓ **Do you want to continue?** (Type 'Yes' or 'No')`;
-                aiResponse.type = 'text'; // စာသားပဲပြမယ်
+                aiResponse.type = 'text'; 
 
             } else {
                 // 🟢 မပြည့်သေးဘူး -> နောက်တစ်ပုဒ် မေးမယ်
@@ -507,6 +511,72 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
                   aiResponse.type = 'quiz';
                   aiResponse.quizData = nextQuestion;
                 }
+            }
+          } 
+          // Quiz မစရသေးခင်
+          else {
+             aiResponse.content = "Please type 'Start' to begin the quiz.";
+             aiResponse.type = 'text';
+          }
+          // (A) အရင်မေးခွန်းကို ပြန်ရှာပြီး အဖြေတိုက်စစ်မယ်
+          // const lastSystemMsg = await Message.findOne({ 
+          //   sessionId, 
+          //   role: 'model', 
+          //   quizData: { $exists: true } 
+          // }).sort({ timestamp: -1 });
+
+          // if (lastSystemMsg && lastSystemMsg.quizData) {
+          //   const qData = lastSystemMsg.quizData;
+          //   const correctIndex = qData.correctAnswerIndex; 
+          //   const correctOptionText = qData.options[correctIndex] || ""; 
+            
+          //   // တိုက်စစ်မယ်
+          //   const userMsg = lowerMsg.trim();
+          //   const correctText = correctOptionText.trim().toLowerCase();
+          //   const isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
+
+          //   if (isCorrect) {
+          //       feedback = "✅ **Correct!**\n\n";
+          //       await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
+          //   } else {
+          //       feedback = `❌ **Incorrect.** The answer was: *${correctOptionText}*.\n\n`;
+          //   }
+
+          //   // (B) မေးခွန်းအရေအတွက် တိုးမယ် (+1)
+          //   const updatedSession = await Session.findByIdAndUpdate(
+          //       sessionId, 
+          //       { $inc: { questionCount: 1 } }, 
+          //       { new: true } 
+          //   );
+
+          //   const currentCount = updatedSession?.questionCount || 0;
+          //   const currentScore = updatedSession?.score || 0; 
+
+          //   // (C) ၅ ပုဒ် ပြည့်ပြီလား?
+          //   if (currentCount >= 5) {
+          //       // 🛑 ၅ ပုဒ်ပြည့်ပြီ -> Result ပြပြီး မေးခွန်းထုတ်မယ်
+          //       let finalComment = "";
+          //       if (currentScore >= 5) finalComment = "🏆 **Perfect!** You are a Cyber Expert!";
+          //       else if (currentScore >= 3) finalComment = "✅ **Good Job!** You passed.";
+          //       else finalComment = "📚 **Keep Learning!**";
+
+          //       // 👇 ဒီစာသားက အရေးကြီးဆုံးပါ (မေးခွန်းမေးတဲ့အပိုင်း)
+          //       aiResponse.content = `${feedback}🎉 **Round Completed!**\n\n📊 **Score: ${currentScore} / 5**\n${finalComment}\n\n❓ **Do you want to continue?** (Type 'Yes' or 'No')`;
+          //       aiResponse.type = 'text'; // စာသားပဲပြမယ်
+
+          //   } else {
+          //       // 🟢 မပြည့်သေးဘူး -> နောက်တစ်ပုဒ် မေးမယ်
+          //       const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+          //       const nextQuestion = randomResults[0];
+                
+          //       if (!nextQuestion) {
+          //         aiResponse.content = "No questions found.";
+          //         aiResponse.type = 'text';
+          //       } else {
+          //         aiResponse.content = `${feedback}**Question ${currentCount + 1}:**`; 
+          //         aiResponse.type = 'quiz';
+          //         aiResponse.quizData = nextQuestion;
+          //       }
             }
           } 
           // Quiz မစရသေးခင် တခြားစာရိုက်ရင်
@@ -581,10 +651,10 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
           //   }
           // } 
           // // Quiz မစရသေးခင်
-          // else {
-          //    aiResponse.content = "Please type 'Start' to begin the quiz.";
-          //    aiResponse.type = 'text';
-          // }
+          else {
+             aiResponse.content = "Please type 'Start' to begin the quiz.";
+             aiResponse.type = 'text';
+          }
     else {
       const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
       const historyParts = history.reverse().map(m => ({
