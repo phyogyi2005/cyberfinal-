@@ -366,14 +366,23 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
 
             
             let isCorrect = false;
-            if (correctText.length > 0 && userMsg.length > 0) {
-              if (userMsg.includes("incorrect:::")) {
-              isCorrect = false; 
-              }  
-              else {
-                isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
-              }
-            }
+
+// Convert inputs to lowercase for comparison purposes to avoid case issues
+const lowerUserMsg = userMsg.toLowerCase();
+const lowerCorrectText = correctText.toLowerCase();
+
+if (correctText.length > 0 && userMsg.length > 0) {
+    // Check for "incorrect:::" (now case-insensitive)
+    if (lowerUserMsg.includes("incorrect:::")) {
+        isCorrect = false; 
+    }  
+    else {
+        // Check for matches or the "correct:::" tag
+        isCorrect = lowerCorrectText.includes(lowerUserMsg) || 
+                    lowerUserMsg.includes(lowerCorrectText) || 
+                    lowerUserMsg.includes("correct:::");
+    }
+}
 
             // (B) မေးခွန်းအရေအတွက် တိုးမယ် (+1)
             await Session.findByIdAndUpdate(sessionId, { $inc: { questionCount: 1 } });
