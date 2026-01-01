@@ -201,7 +201,62 @@ function App() {
 
   // --- CORE SEND LOGIC ---
 
- const handleSend = async (textOverride?: string) => {
+ // const handleSend = async (textOverride?: string) => {
+ //    const text = textOverride || input;
+    
+ //    if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
+
+ //    // 1. Optimistic Update (User စာကို ချက်ချင်းပြမယ်)
+ //    const optimisticMsg: any = {
+ //      role: 'user',
+ //      content: text,
+ //      type: MessageType.TEXT,
+ //      timestamp: Date.now(),
+ //      attachments: textOverride ? [] : [...attachments]
+ //    };
+    
+ //    setMessages(prev => [...prev, optimisticMsg]);
+    
+ //    if (!textOverride) {
+ //        setInput('');
+ //        setAttachments([]);
+ //    }
+ //    setIsLoading(true);
+
+ //    try {
+ //      // 2. API Call
+ //      const response = await api.sendMessage({
+ //        sessionId: currentSessionId,
+ //        message: text,
+ //        userLevel: user.knowledgeLevel,
+ //        language,
+ //        mode: chatMode,
+ //        attachments: textOverride ? [] : attachments
+ //      });
+      
+ //      setMessages(prev => [...prev, response]);
+
+ //      // ---------------------------------------------------------
+ //      // ✅ (၄) TITLE UPDATE LOGIC (ဒီအပိုင်း အသစ်ထည့်လိုက်ပါ)
+ //      // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို User ပို့လိုက်တဲ့ စာသားနဲ့ ပြောင်းမယ်
+ //      // ---------------------------------------------------------
+ //      if (messages.length === 0) {
+ //         setSessions(prev => prev.map(s => {
+ //            if ((s._id || s.id) === currentSessionId) {
+ //                // စာလုံးရေ ၃၀ ထက်များရင် ဖြတ်မယ်
+ //                return { ...s, title: text.substring(0, 30) + (text.length > 30 ? "..." : "") };
+ //            }
+ //            return s;
+ //         }));
+ //      }
+
+ //    } catch (error: any) {
+ //      console.error(error);
+ //    } finally {
+ //      setIsLoading(false);
+ //    }
+ //  };
+     const handleSend = async (textOverride?: string) => {
     const text = textOverride || input;
     
     if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
@@ -249,14 +304,6 @@ function App() {
             return s;
          }));
       }
-
-    } catch (error: any) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-    
     setMessages(prev => [...prev, optimisticMsg]);
     
     // Clear input states
@@ -291,7 +338,7 @@ function App() {
 
   // --- QUIZ LOGIC (Frontend Check + Backend Tagging) ---
 
-  const handleQuizAnswer = async(answerText: string) => {
+  const handleQuizAnswer = (answerText: string) => {
      if (chatMode !== 'quiz') return;
 
      // Find the last quiz question asked by the model
@@ -321,7 +368,7 @@ function App() {
      handleSend(payload);
   };
 
-  const handleModeChange = async(mode: ChatMode) => {
+  const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
     if (mode === 'quiz') {
       handleSend("Start Quiz");
