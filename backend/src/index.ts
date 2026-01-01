@@ -369,12 +369,15 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
                 isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
             }
 
-            if (isCorrect) {
-                feedback = "✅ **Correct!**\n\n";
-                // အမှတ်တိုးမယ် (await သုံးပြီး ပြီးသည်အထိ စောင့်မယ်)
-                await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
-            } else {
-                feedback = `❌ **Incorrect.** The answer was: *${correctOptionText}*.\n\n`;
+            
+            let isCorrect = false;
+            if (correctText.length > 0 && userMsg.length > 0) {
+              if (userMsg.includes("incorrect:::")) {
+              isCorrect = false; 
+              }  
+              else {
+                isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
+              }
             }
 
             // (B) မေးခွန်းအရေအတွက် တိုးမယ် (+1)
