@@ -199,66 +199,103 @@ function App() {
     }
   };
 
-  // --- CORE SEND LOGIC ---
-
- // const handleSend = async (textOverride?: string) => {
- //    const text = textOverride || input;
+  // const handleSend = async (textOverride?: string) => {
+  //   const text = textOverride || input;
     
- //    if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
+  //   // (၁) Validation
+  //   if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
 
- //    // 1. Optimistic Update (User စာကို ချက်ချင်းပြမယ်)
- //    const optimisticMsg: any = {
- //      role: 'user',
- //      content: text,
- //      type: MessageType.TEXT,
- //      timestamp: Date.now(),
- //      attachments: textOverride ? [] : [...attachments]
- //    };
+  //   // (၂) Optimistic Update (UI မှာ စာအရင်ပြမယ်)
+  //   const optimisticMsg: any = {
+  //     role: 'user',
+  //     content: text,
+  //     type: MessageType.TEXT,
+  //     timestamp: Date.now(),
+  //     attachments: textOverride ? [] : [...attachments]
+  //   };
     
- //    setMessages(prev => [...prev, optimisticMsg]);
+  //   setMessages(prev => [...prev, optimisticMsg]);
     
- //    if (!textOverride) {
- //        setInput('');
- //        setAttachments([]);
- //    }
- //    setIsLoading(true);
+  //   if (!textOverride) {
+  //       setInput('');
+  //       setAttachments([]);
+  //   }
+  //   setIsLoading(true);
 
- //    try {
- //      // 2. API Call
- //      const response = await api.sendMessage({
- //        sessionId: currentSessionId,
- //        message: text,
- //        userLevel: user.knowledgeLevel,
- //        language,
- //        mode: chatMode,
- //        attachments: textOverride ? [] : attachments
- //      });
+  //   try {
+  //     // (၃) API Call
+  //     const response = await api.sendMessage({
+  //       sessionId: currentSessionId,
+  //       message: text,
+  //       userLevel: user.knowledgeLevel,
+  //       language,
+  //       mode: chatMode,
+  //       attachments: textOverride ? [] : attachments
+  //     });
       
- //      setMessages(prev => [...prev, response]);
+  //     setMessages(prev => [...prev, response]);
 
- //      // ---------------------------------------------------------
- //      // ✅ (၄) TITLE UPDATE LOGIC (ဒီအပိုင်း အသစ်ထည့်လိုက်ပါ)
- //      // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို User ပို့လိုက်တဲ့ စာသားနဲ့ ပြောင်းမယ်
- //      // ---------------------------------------------------------
- //      if (messages.length === 0) {
- //         setSessions(prev => prev.map(s => {
- //            if ((s._id || s.id) === currentSessionId) {
- //                // စာလုံးရေ ၃၀ ထက်များရင် ဖြတ်မယ်
- //                return { ...s, title: text.substring(0, 30) + (text.length > 30 ? "..." : "") };
- //            }
- //            return s;
- //         }));
- //      }
+  //     // (၄) Title Update Logic
+  //     // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို ပြောင်းပေးမယ်
+  //     if (messages.length === 0) {
+  //        setSessions(prev => prev.map(s => {
+  //           if ((s._id || s.id) === currentSessionId) {
+  //               return { ...s, title: text.substring(0, 30) + (text.length > 30 ? "..." : "") };
+  //           }
+  //           return s;
+  //        }));
+  //     }
 
- //    } catch (error: any) {
- //      console.error(error);
- //    } finally {
- //      setIsLoading(false);
- //    }
- //  };
-  const handleSend = async (textOverride?: string) => {
+  //   } catch (error: any) {
+  //     console.error("Chat Error:", error);
+  //   } finally {
+  //     // (၅) Loading ပိတ်မယ်
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // // --- QUIZ LOGIC (Frontend Check + Backend Tagging) ---
+
+  // const handleQuizAnswer = (answerText: string) => {
+  //    if (chatMode !== 'quiz') return;
+
+  //    // Find the last quiz question asked by the model
+  //    const lastQuizMsg = [...messages].reverse().find(m => m.role === 'model' && m.quizData);
+
+  //    if (!lastQuizMsg || !lastQuizMsg.quizData) {
+  //       // Fallback: just send the text
+  //       handleSend(answerText);
+  //       return;
+  //    }
+
+  //    const qData = lastQuizMsg.quizData;
+  //    const correctIndex = qData.correctAnswerIndex;
+  //    const correctOptionText = qData.options[correctIndex] || "";
+
+  //    // Check Answer Logic
+  //    const userClick = answerText.trim().toLowerCase();
+  //    const correctText = correctOptionText.trim().toLowerCase();
+     
+  //    // Determine Correctness
+  //    const isCorrect = correctText.includes(userClick) || userClick.includes(correctText);
+
+  //    // Create Tagged Payload for Backend
+  //    const payload = isCorrect ? `CORRECT:::${answerText}` : `INCORRECT:::${answerText}`;
+     
+  //    // Send hidden payload, but UI shows just the answer via optimistic update in handleSend
+  //    handleSend(payload);
+  // };
+  // --- CORE SEND LOGIC (UPDATED WITH FIX) ---
+
+  // (A) handleSend မှာ modeOverride parameter ထပ်ဖြည့်ထားပါတယ်
+  const handleSend = async (textOverride?: string, modeOverride?: ChatMode) => {
     const text = textOverride || input;
     
+    // (B) ✅ CRITICAL FIX:
+    // ပေးလိုက်တဲ့ Mode အသစ်ရှိရင် အဲ့ဒါကို သုံးမယ်၊ မရှိမှ လက်ရှိ State (chatMode) ကို သုံးမယ်
+    // ဒီလိုလုပ်မှ "Start Quiz" နှိပ်နှိပ်ချင်း "quiz" mode နဲ့ Backend ကို ရောက်မှာပါ
+    const currentMode = modeOverride || chatMode;
+
     // (၁) Validation
     if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
 
@@ -286,14 +323,13 @@ function App() {
         message: text,
         userLevel: user.knowledgeLevel,
         language,
-        mode: chatMode,
+        mode: currentMode, // ✅ FIX: chatMode အစား currentMode ကို သုံးထားပါတယ်
         attachments: textOverride ? [] : attachments
       });
       
       setMessages(prev => [...prev, response]);
 
       // (၄) Title Update Logic
-      // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို ပြောင်းပေးမယ်
       if (messages.length === 0) {
          setSessions(prev => prev.map(s => {
             if ((s._id || s.id) === currentSessionId) {
@@ -337,10 +373,30 @@ function App() {
      const isCorrect = correctText.includes(userClick) || userClick.includes(correctText);
 
      // Create Tagged Payload for Backend
+     // Backend will look for "CORRECT:::" or "INCORRECT:::"
      const payload = isCorrect ? `CORRECT:::${answerText}` : `INCORRECT:::${answerText}`;
      
-     // Send hidden payload, but UI shows just the answer via optimistic update in handleSend
+     // Send hidden payload via handleSend
      handleSend(payload);
+  };
+
+  // --- MODE CHANGE HANDLER (REQUIRED FOR FIX) ---
+  // ဒီ Function ကိုလည်း သေချာ Update လုပ်ပေးပါ
+
+  const handleModeChange = (mode: ChatMode) => {
+    setChatMode(mode);
+    
+    if (mode === 'quiz') {
+      // ✅ FIX: ဒုတိယ parameter အနေနဲ့ 'quiz' ကို ထည့်ပေးလိုက်ပါ
+      handleSend("Start Quiz", 'quiz'); 
+    } 
+    else if (mode === 'analysis') {
+      setInput("");
+      handleSend("Analysis Mode Started. Upload a file or paste a URL.", 'analysis');
+    }
+    else if (mode === 'learning') {
+       handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
+    }
   };
 
   const handleModeChange = (mode: ChatMode) => {
