@@ -288,6 +288,12 @@ function App() {
   // --- CORE SEND LOGIC (UPDATED WITH FIX) ---
 
   // (A) handleSend မှာ modeOverride parameter ထပ်ဖြည့်ထားပါတယ်
+ // --- CORE SEND LOGIC (UPDATED WITH FIX) ---
+
+  // (A) handleSend မှာ modeOverride parameter ထပ်ဖြည့်ထားပါတယ်
+// --- CORE SEND LOGIC (UPDATED WITH FIX) ---
+
+  // (A) handleSend မှာ modeOverride parameter ထပ်ဖြည့်ထားပါတယ်
   const handleSend = async (textOverride?: string, modeOverride?: ChatMode) => {
     const text = textOverride || input;
     
@@ -380,36 +386,24 @@ function App() {
      handleSend(payload);
   };
 
+  // --- MODE CHANGE HANDLER (REQUIRED FOR FIX) ---
+  // ဒီ Function ကိုလည်း သေချာ Update လုပ်ပေးပါ
 
-// --- MODE CHANGE HANDLER (FIXED FOR ALL MODES) ---
   const handleModeChange = (mode: ChatMode) => {
-    // 1. Update State (for UI)
     setChatMode(mode);
     
-    // 2. Send Start Message with EXPLICIT MODE (for Backend)
-    // ⚠️ You must pass the second parameter (mode) for EVERY check
-    
     if (mode === 'quiz') {
+      // ✅ FIX: ဒုတိယ parameter အနေနဲ့ 'quiz' ကို ထည့်ပေးလိုက်ပါ
       handleSend("Start Quiz", 'quiz'); 
     } 
     else if (mode === 'analysis') {
-      // Clear input for cleaner look
-      setInput(""); 
-      // Force 'analysis' mode so Backend sends JSON instruction
+      setInput("");
       handleSend("Analysis Mode Started. Upload a file or paste a URL.", 'analysis');
     }
     else if (mode === 'learning') {
-       // Force 'learning' mode so Backend acts as a tutor
        handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
     }
-    else {
-        // Normal mode
-        // Optional: You can send a greeting or just switch silently
-        // handleSend("Hello", 'normal'); 
-    }
   };
-
-  // --- RENDER ---
 
   if (!user) return <Auth onLogin={handleLogin} />;
 
