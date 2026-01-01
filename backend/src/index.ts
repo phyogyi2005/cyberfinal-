@@ -362,12 +362,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
             const userMsg = lowerMsg.trim();
             const correctText = correctOptionText.trim().toLowerCase();
             
-            // ⚠️ FIX 1: အဖြေမှန်စာသား ရှိမှသာ စစ်မယ် (မရှိရင် false)
-            // ဒါမှ "".includes("") ကြောင့် အမြဲမှန်နေတဲ့ ပြဿနာ ရှင်းသွားမယ်
-            let isCorrect = false;
-            if (correctText.length > 0 && userMsg.length > 0) {
-                isCorrect = correctText.includes(userMsg) || userMsg.includes(correctText) || userMsg.includes("correct:::");
-            }
+            
 
             
             let isCorrect = false;
