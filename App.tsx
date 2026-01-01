@@ -57,23 +57,48 @@ function App() {
 
   // --- API HELPER FUNCTIONS ---
 
+  // const loadSessions = async (tokenOverride?: string) => {
+  //   try {
+  //     // Pass token if available to ensure auth works
+  //     const data = await api.getSessions(tokenOverride); 
+  //     setSessions(data);
+
+  //     // If we have sessions but none selected, select the first (most recent)
+  //     if (data.length > 0 && !currentSessionId) {
+  //       const firstId = data[0]._id || data[0].id;
+  //       setCurrentSessionId(firstId);
+        
+  //       // Restore mode from session if available
+  //       if (data[0].mode) setChatMode(data[0].mode as ChatMode);
+  //     } 
+  //     // If no history exists, create a new session automatically
+  //     else if (data.length === 0) {
+  //       createNewSession();
+  //     }
+  //   } catch (e) {
+  //     console.error("Session Load Error", e);
+  //   }
+  // };
+  // App.tsx အတွင်း
+
   const loadSessions = async (tokenOverride?: string) => {
     try {
-      // Pass token if available to ensure auth works
-      const data = await api.getSessions(tokenOverride); 
+      const token = tokenOverride || localStorage.getItem('cyber_token');
+      if (!token) return;
+
+      const data = await api.getSessions(token); 
       setSessions(data);
 
-      // If we have sessions but none selected, select the first (most recent)
       if (data.length > 0 && !currentSessionId) {
+        // Backend က _id (သို့) id ကြိုက်တာလာလာ ဖမ်းလို့ရအောင်
         const firstId = data[0]._id || data[0].id;
         setCurrentSessionId(firstId);
         
-        // Restore mode from session if available
         if (data[0].mode) setChatMode(data[0].mode as ChatMode);
       } 
-      // If no history exists, create a new session automatically
       else if (data.length === 0) {
-        createNewSession();
+        // 👇 ဒီမှာ await ထည့်ပေးလိုက်ပါ
+        await createNewSession(); 
       }
     } catch (e) {
       console.error("Session Load Error", e);
