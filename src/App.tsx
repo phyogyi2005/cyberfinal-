@@ -419,7 +419,7 @@ function App() {
             <div className="flex flex-wrap gap-2 md:gap-3">
               {[
                 { id: 'normal', icon: 'forum', label: 'Consult', color: 'bg-blue-600 text-white shadow-blue-500/20' },
-                { id: 'quiz', icon: 'psychology', label: 'Drill', color: 'bg-emerald-600 text-white shadow-emerald-500/20' },
+                { id: 'quizs', icon: 'psychology', label: 'Drill', color: 'bg-emerald-600 text-white shadow-emerald-500/20' },
                 { id: 'learning', icon: 'school', label: 'Train', color: 'bg-purple-600 text-white shadow-purple-500/20' },
                 { id: 'analysis', icon: 'radar', label: 'Check', color: 'bg-rose-600 text-white shadow-rose-500/20' },
               ].map((m) => (
