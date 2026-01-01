@@ -19,12 +19,23 @@ function App() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Initial Load (Theme, User & History Fetch)
   useEffect(() => {
-    const storedUser = localStorage.getItem('cyber_user');
-    const token = localStorage.getItem('cyber_token');
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-      loadSessions();
+    // 1. Theme Check
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setDarkMode(true);
+    }
+
+    // 2. User & Token Check
+    // (မှတ်ချက်: LocalStorage Key နာမည် မှန်ကန်ကြောင်း စစ်ဆေးပါ)
+    const storedUser = localStorage.getItem('cyberguard_user'); 
+    const storedToken = localStorage.getItem('cyber_token');
+
+    if (storedUser && storedToken) {
+       setUser(JSON.parse(storedUser));
+       
+       // 👇 အရေးကြီးဆုံးအချက်: Token ကို parameter အနေနဲ့ ထည့်ပေးရပါမယ်
+       fetchSessions(storedToken); 
     }
   }, []);
 
@@ -61,7 +72,7 @@ function App() {
 
   const handleLogin = (userData: User, token: string) => {
     setUser(userData);
-    localStorage.setItem('cyber_user', JSON.stringify(userData));
+    localStorage.setItem('cyberguard_user', JSON.stringify(userData));
     localStorage.setItem('cyber_token', token);
     loadSessions();
   };
