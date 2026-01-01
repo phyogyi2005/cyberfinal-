@@ -23,21 +23,37 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initial Load (Theme & User Check)
+  // useEffect(() => {
+  //   if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  //     setDarkMode(true);
+  //   }
+  //   const storedUser = localStorage.getItem('cyberguard_user');
+  //   if (storedUser) setUser(JSON.parse(storedUser));
+
+  //   const storedSessions = localStorage.getItem('cyberguard_sessions');
+  //   if (storedSessions) {
+  //      const parsed = JSON.parse(storedSessions);
+  //      setSessions(parsed);
+  //      if (parsed.length > 0) setCurrentSessionId(parsed[0].id);
+  //   }
+  // }, []);
+// Initial Load (Theme, User & History Fetch)
   useEffect(() => {
+    // 1. Theme Check
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setDarkMode(true);
     }
-    const storedUser = localStorage.getItem('cyberguard_user');
-    if (storedUser) setUser(JSON.parse(storedUser));
 
-    const storedSessions = localStorage.getItem('cyberguard_sessions');
-    if (storedSessions) {
-       const parsed = JSON.parse(storedSessions);
-       setSessions(parsed);
-       if (parsed.length > 0) setCurrentSessionId(parsed[0].id);
+    // 2. User & Token Check
+    const storedUser = localStorage.getItem('cyberguard_user');
+    const storedToken = localStorage.getItem('cyber_token');
+
+    if (storedUser && storedToken) {
+       setUser(JSON.parse(storedUser));
+       // 👇 Database မှ History ကို ချက်ချင်း လှမ်းဆွဲပါ
+       fetchSessions(storedToken); 
     }
   }, []);
-
   // Theme Toggle
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
@@ -72,23 +88,65 @@ function App() {
     setChatMode('normal');
     setQuizCount(0);
   };
+// Database မှ Session များကို ဆွဲယူခြင်း
+  const fetchSessions = async (token: string) => {
+    try {
+      // Backend URL (localhost:5000 သို့မဟုတ် render url)
+      const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'; 
+      
+      const res = await fetch(`${API_URL}/api/sessions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          // Backend က _id နဲ့ လာရင် id ပြောင်းပေးဖို့ လိုနိုင်ပါတယ် (Optional)
+          const formattedSessions = data.map((s: any) => ({
+             ...s,
+             id: s._id || s.id // MongoDB _id ကို Frontend id အဖြစ် သုံးမယ်
+          }));
+          
+          setSessions(formattedSessions);
+          setCurrentSessionId(formattedSessions[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
   // const handleLogin = (userData: User) => {
   //   setUser(userData);
   //   localStorage.setItem('cyberguard_user', JSON.stringify(userData));
   //   if (sessions.length === 0) createNewSession();
   // };
-const handleLogin = (userData: User, token: string) => { // 👈 (1) token ကို လက်ခံပါ
-  setUser(userData);
+// const handleLogin = (userData: User, token: string) => { // 👈 (1) token ကို လက်ခံပါ
+//   setUser(userData);
   
-  // User Data ကို သိမ်းခြင်း
-  localStorage.setItem('cyberguard_user', JSON.stringify(userData));
+//   // User Data ကို သိမ်းခြင်း
+//   localStorage.setItem('cyberguard_user', JSON.stringify(userData));
   
-  // 👇 (2) Token ကို 'cyber_token' နာမည်နဲ့ မဖြစ်မနေ သိမ်းရပါမယ်
-  localStorage.setItem('cyber_token', token); 
+//   // 👇 (2) Token ကို 'cyber_token' နာမည်နဲ့ မဖြစ်မနေ သိမ်းရပါမယ်
+//   localStorage.setItem('cyber_token', token); 
   
-  if (sessions.length === 0) createNewSession();
-};
+//   if (sessions.length === 0) createNewSession();
+// };
+  const handleLogin = (userData: User, token: string) => {
+    setUser(userData);
+    
+    // Save to LocalStorage
+    localStorage.setItem('cyberguard_user', JSON.stringify(userData));
+    localStorage.setItem('cyber_token', token);
+
+    // 👇 Login ဝင်တာနဲ့ Database က History ကို လှမ်းဆွဲမယ်
+    fetchSessions(token); 
+    
+    // (မှတ်ချက်: History မရှိမှသာ New Session ဖန်တီးမယ်)
+    // fetchSessions က async ဖြစ်လို့၊ ခဏနေမှ session ဝင်လာပါလိမ့်မယ်
+  };
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('cyberguard_user');
