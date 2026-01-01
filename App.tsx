@@ -256,12 +256,13 @@ function App() {
  //      setIsLoading(false);
  //    }
  //  };
-     const handleSend = async (textOverride?: string) => {
+  const handleSend = async (textOverride?: string) => {
     const text = textOverride || input;
     
+    // (၁) Validation
     if ((!text.trim() && attachments.length === 0) || !currentSessionId || !user) return;
 
-    // 1. Optimistic Update (User စာကို ချက်ချင်းပြမယ်)
+    // (၂) Optimistic Update (UI မှာ စာအရင်ပြမယ်)
     const optimisticMsg: any = {
       role: 'user',
       content: text,
@@ -279,7 +280,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      // 2. API Call
+      // (၃) API Call
       const response = await api.sendMessage({
         sessionId: currentSessionId,
         message: text,
@@ -291,47 +292,21 @@ function App() {
       
       setMessages(prev => [...prev, response]);
 
-      // ---------------------------------------------------------
-      // ✅ (၄) TITLE UPDATE LOGIC (ဒီအပိုင်း အသစ်ထည့်လိုက်ပါ)
-      // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို User ပို့လိုက်တဲ့ စာသားနဲ့ ပြောင်းမယ်
-      // ---------------------------------------------------------
+      // (၄) Title Update Logic
+      // ပထမဆုံး စာပို့တာဆိုရင် Sidebar မှာ Title ကို ပြောင်းပေးမယ်
       if (messages.length === 0) {
          setSessions(prev => prev.map(s => {
             if ((s._id || s.id) === currentSessionId) {
-                // စာလုံးရေ ၃၀ ထက်များရင် ဖြတ်မယ်
                 return { ...s, title: text.substring(0, 30) + (text.length > 30 ? "..." : "") };
             }
             return s;
          }));
       }
-    setMessages(prev => [...prev, optimisticMsg]);
-    
-    // Clear input states
-    if (!textOverride) {
-        setInput('');
-        setAttachments([]);
-    }
-    setIsLoading(true);
 
-    try {
-      // 2. API Call
-      const response = await api.sendMessage({
-        sessionId: currentSessionId,
-        message: text,
-        userLevel: user.knowledgeLevel,
-        language,
-        mode: chatMode,
-        attachments: textOverride ? [] : attachments // Pass attachments to API
-      });
-      
-      setMessages(prev => [...prev, response]);
-      
-      // Refresh session list to update titles or lastUpdated
-      // setTimeout(() => loadSessions(), 1000); 
     } catch (error: any) {
-      console.error(error);
-      // Optional: Add error message to chat
+      console.error("Chat Error:", error);
     } finally {
+      // (၅) Loading ပိတ်မယ်
       setIsLoading(false);
     }
   };
