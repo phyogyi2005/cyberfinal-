@@ -164,7 +164,7 @@ const generateResponseWithFallback = async (
                 
                 // Quota (429) ပြည့်ရင် နောက် Key တစ်ခုပြောင်းမယ်
                 if (msg.includes('quota') || msg.includes('429') || msg.includes('resource_exhausted')) {
-                    console.warn(`⚠️ Key ending in ...${key.slice(-4)} exhausted. Rotating...`);
+                    console.warn(`⚠️ Key ending in ...${key?.slice(-4)} exhausted. Rotating...`);
                     continue; 
                 }
 
