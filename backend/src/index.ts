@@ -508,17 +508,27 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         "score": number (0-100, where 100 is safest),
         "findings": [
           {
-             "category": "String (e.g., Phishing / Malware)",
+             "category": "String (e.g., Safe or HarmLess , Suspicious , Malicious/Phishing)",
              "details": "String (Explain why it is dangerous in ${language === 'my' ? 'Myanmar' : 'English'})"
           }
         ],
         "chartData": [
           {"name": "Malicious", "value": number, "fill": "#ef4444"},
           {"name": "Safe", "value": number, "fill": "#10b981"}
+          {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
         ]
       }
       `;
       break;
+            case 'normal':
+                {
+                    Binstruction += `
+      TASK: General Assistant.
+      1. Answer questions normally.
+      2. If the user uploads an image/file,and url  describe it generally unless asked to analyze it.
+      `;
+                }
+                break;
     default: // normal
       Binstruction += `
       TASK: General Assistant.
