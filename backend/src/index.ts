@@ -438,13 +438,13 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       //   ]
       // }`;
         
-  //     const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.Your full name is cyber hygiene chatbot for myanmar youth.
+  //     const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
   // User Knowledge Level: ${userLevel}.
   // Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
   // Current Mode: ${mode.toUpperCase()}.
   // `;
         const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
- let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
+ let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant for myanmar youth.
   User Knowledge Level: ${userLevel}.
   Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
   
@@ -454,6 +454,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
                 case 'learning':
       Binstruction += `
       TASK: You are an engaging Cyber Tutor.
+      Look up the user knowledge level teach to user.
       
       STYLE GUIDE (Strictly Follow):
       1. **Use Numbered Lists**: Break concepts down into steps (1., 2., 3.).
@@ -471,22 +472,51 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       Do you want to try an example?"
       `;
       break;
-    case 'analysis':
-      Binstruction += `
-      TASK: You are a Threat Analyst.
-      1. The user will provide URLs, IPs, Files, or Images.
-      2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
-      3. Output strictly compliant JSON for the analysis result:
-      {
-        "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
-        "score": number (0-100, 100 is safest),
-        "findings": [{"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},{"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}],
-        "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
-      }
+    // case 'analysis':
+    //   Binstruction += `
+    //   TASK: You are a Threat Analyst.
+    //   1. The user will provide URLs, IPs, Files, or Images.
+    //   2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
+    //   3. Output strictly compliant JSON for the analysis result:
+    //   {
+    //     "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
+    //     "score": number (0-100, 100 is safest),
+    //     "findings": [{"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},{"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}],
+    //     "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
+    //   }
       
-      LANGUAGE INSTRUCTION:
-      - If the language is set to Myanmar (Burmese), you MUST translate the values of 'category', 'details', and 'riskLevel' (if possible) into Burmese.
-      - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.
+    //   LANGUAGE INSTRUCTION:
+    //   - If the language is set to Myanmar (Burmese), you MUST translate the values of 'category', 'details', and 'riskLevel' (if possible) into Burmese.
+    //   - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.
+    //   `;
+    //   break;
+                case 'analysis':
+      Binstruction += `
+      TASK: You are a Cybersecurity Threat Analyst.
+      
+      INSTRUCTIONS:
+      1. Analyze the input (URL, text, or file) for security risks.
+      2. Output the result in **STRICT JSON** format.
+      
+      LANGUAGE RULES (CRITICAL):
+      - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
+      - **JSON VALUES** (The content inside the keys) MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
+      
+      REQUIRED JSON STRUCTURE:
+      {
+        "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
+        "score": number (0-100, where 100 is safest),
+        "findings": [
+          {
+             "category": "String (e.g., Phishing / Malware)",
+             "details": "String (Explain why it is dangerous in ${language === 'my' ? 'Myanmar' : 'English'})"
+          }
+        ],
+        "chartData": [
+          {"name": "Malicious", "value": number, "fill": "#ef4444"},
+          {"name": "Safe", "value": number, "fill": "#10b981"}
+        ]
+      }
       `;
       break;
     default: // normal
@@ -513,17 +543,36 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       aiResponse.content = rawText;
       aiResponse.type = 'text';
 
-      if (mode === 'analysis') {
+    //   if (mode === 'analysis') {
+    //     // Try to extract JSON for Analysis Dashboard
+    //     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    //     if (jsonMatch) {
+    //       try {
+    //         aiResponse.analysisData = JSON.parse(jsonMatch[0]);
+    //         aiResponse.type = 'analysis';
+    //       } catch(e) {}
+    //     }
+    //   }
+    // }
+        if (mode === 'analysis') {
         // Try to extract JSON for Analysis Dashboard
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        // ပိုကောင်းတဲ့ Regex ကို သုံးထားပါတယ် (Markdown code block တွေကို ဖယ်ရှားဖို့)
+        const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // ပထမဆုံး { နဲ့ နောက်ဆုံး } ကြားက စာသားကိုပဲ ယူပါမယ်
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+
         if (jsonMatch) {
           try {
             aiResponse.analysisData = JSON.parse(jsonMatch[0]);
             aiResponse.type = 'analysis';
-          } catch(e) {}
+          } catch(e) {
+             console.error("JSON Parse Error:", e);
+             // JSON မအောင်မြင်ရင် Text အနေနဲ့ပဲ ပြပါမယ် (User မတိုင်ပင်မိအောင်)
+             aiResponse.content += "\n\n(⚠️ Analysis visual generation failed, but here is the text report.)";
+          }
         }
       }
-    }
 
     const savedAiMsg = new Message(aiResponse);
     await savedAiMsg.save();
