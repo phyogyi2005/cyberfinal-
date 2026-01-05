@@ -397,7 +397,7 @@ function App() {
       handleSend("Start Quiz", 'quiz'); 
     } 
     else if (mode === 'analysis') {
-      setInput("");
+      //setInput("");
       //handleSend('analysis');
     }
     else if (mode === 'learning') {
