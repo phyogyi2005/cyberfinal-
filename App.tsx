@@ -546,49 +546,6 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
             <div ref={messagesEndRef} />
           </div>
         </div>
-
-        {/* Bottom Input */}
-        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-          <div className="max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
-            
-            {/* Mode Pills */}
-            <div className="flex flex-wrap gap-2 md:gap-3">
-              {[
-                { id: 'normal', icon: 'chat', label: 'normal', color: 'bg-blue-600 text-white shadow-blue-500/20' },
-                { id: 'analysis', icon: 'shield', label: 'check', color: 'bg-emerald-600 text-white shadow-emerald-500/20' },
-                { id: 'learning', icon: 'school', label: 'learning', color: 'bg-purple-600 text-white shadow-purple-500/20' },
-                { id: 'quiz', icon: 'quiz', label: 'quiz', color: 'bg-rose-600 text-white shadow-rose-500/20' },
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => handleModeChange(m.id as ChatMode)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    chatMode === m.id ? `${m.color} shadow-lg scale-105` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <span className="material-icons text-sm">{m.icon}</span>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Attachments Preview */}
-            {attachments.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {attachments.map((att, i) => (
-                    <div key={i} className="relative bg-slate-100 dark:bg-slate-800 rounded-lg p-2 flex items-center gap-2 min-w-fit border border-slate-200 dark:border-slate-700">
-                       <span className="material-icons text-sm text-blue-500">
-                         {att.type === 'image' ? 'image' : 'description'}
-                       </span>
-                       <span className="text-[10px] font-bold dark:text-slate-300 max-w-[100px] truncate">{att.name}</span>
-                       <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500">
-                         <span className="material-icons text-sm">close</span>
-                       </button>
-                    </div>
-                  ))}
-                </div>
-            )}
-           {/* ... Attachments Preview code ... */}
 {/* ✅ LEVEL SELECTOR UI (SMALLER + CLOSE BUTTON) */}
              
 {showLevelSelector && chatMode === 'learning' && (
@@ -631,6 +588,49 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
   </div>
 )}
            
+        {/* Bottom Input */}
+        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+          <div className="max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
+            
+            {/* Mode Pills */}
+            <div className="flex flex-wrap gap-2 md:gap-3">
+              {[
+                { id: 'normal', icon: 'chat', label: 'normal', color: 'bg-blue-600 text-white shadow-blue-500/20' },
+                { id: 'analysis', icon: 'shield', label: 'check', color: 'bg-emerald-600 text-white shadow-emerald-500/20' },
+                { id: 'learning', icon: 'school', label: 'learning', color: 'bg-purple-600 text-white shadow-purple-500/20' },
+                { id: 'quiz', icon: 'quiz', label: 'quiz', color: 'bg-rose-600 text-white shadow-rose-500/20' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => handleModeChange(m.id as ChatMode)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    chatMode === m.id ? `${m.color} shadow-lg scale-105` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <span className="material-icons text-sm">{m.icon}</span>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Attachments Preview */}
+            {attachments.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {attachments.map((att, i) => (
+                    <div key={i} className="relative bg-slate-100 dark:bg-slate-800 rounded-lg p-2 flex items-center gap-2 min-w-fit border border-slate-200 dark:border-slate-700">
+                       <span className="material-icons text-sm text-blue-500">
+                         {att.type === 'image' ? 'image' : 'description'}
+                       </span>
+                       <span className="text-[10px] font-bold dark:text-slate-300 max-w-[100px] truncate">{att.name}</span>
+                       <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500">
+                         <span className="material-icons text-sm">close</span>
+                       </button>
+                    </div>
+                  ))}
+                </div>
+            )}
+           {/* ... Attachments Preview code ... */}
+
 
             {/* Input Field */}
       
