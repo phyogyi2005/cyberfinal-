@@ -490,31 +490,74 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     //   - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.
     //   `;
     //   break;
-                case 'analysis':
+      //           case 'analysis':
+      // Binstruction += `
+      // TASK: You are a Cybersecurity Threat Analyst.
+      
+      // INSTRUCTIONS:
+      // 1. Analyze the input (URL, text, or file) for security risks.
+      // 2. Output the result in **STRICT JSON** format.
+      
+      // LANGUAGE RULES (CRITICAL):
+      // - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
+      // - **JSON VALUES** (The content inside the keys) MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
+      
+      // REQUIRED JSON STRUCTURE:
+      // {
+      //   "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
+      //   "score": number (0-100, where 100 is safest),
+      //   "findings": [
+      //     {
+      //        "category": "String (e.g., Safe or HarmLess , Suspicious , Malicious/Phishing)",
+      //        "details": "String (Explain why it is dangerous in ${language === 'my' ? 'Myanmar' : 'English'})"
+      //     }
+      //   ],
+      //   "chartData": [
+      //     {"name": "Malicious", "value": number, "fill": "#ef4444"},
+      //     {"name": "Safe", "value": number, "fill": "#10b981"}
+      //     {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
+      //   ]
+      // }
+      // `;
+      // break;
+            case 'analysis':
       Binstruction += `
       TASK: You are a Cybersecurity Threat Analyst.
       
       INSTRUCTIONS:
       1. Analyze the input (URL, text, or file) for security risks.
       2. Output the result in **STRICT JSON** format.
+      3. **IMPORTANT:** Provide **3 distinct findings** if possible.
+      4. **SCORING RULE:** The 'score' is a **SECURITY SCORE** (Safety Level). 
+         - If Risk is **Safe**, score MUST be **90-100**.
+         - If Risk is **Suspicious**, score MUST be **50-70**.
+         - If Risk is **Malicious**, score MUST be **0-30**.
       
       LANGUAGE RULES (CRITICAL):
-      - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
-      - **JSON VALUES** (The content inside the keys) MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
+      - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details", "name", "value", "fill") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
+      - **JSON VALUES** (The content inside the keys, specifically 'details' and 'category') MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
       
       REQUIRED JSON STRUCTURE:
       {
         "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
-        "score": number (0-100, where 100 is safest),
+        "score": number (0-100. This is a SAFETY SCORE: 100 = Safe, 0 = Critical Risk),
         "findings": [
           {
-             "category": "String (e.g., Safe or HarmLess , Suspicious , Malicious/Phishing)",
-             "details": "String (Explain why it is dangerous in ${language === 'my' ? 'Myanmar' : 'English'})"
+             "category": "String (e.g., Protocol Security)",
+             "details": "String (Explain the first finding in ${language === 'my' ? 'Myanmar' : 'English'})"
+          },
+          {
+             "category": "String (e.g., Domain Reputation)",
+             "details": "String (Explain the second finding in ${language === 'my' ? 'Myanmar' : 'English'})"
+          },
+          {
+             "category": "String (e.g., Content Analysis)",
+             "details": "String (Explain the third finding in ${language === 'my' ? 'Myanmar' : 'English'})"
           }
         ],
         "chartData": [
           {"name": "Malicious", "value": number, "fill": "#ef4444"},
-          {"name": "Safe", "value": number, "fill": "#10b981"}
+          {"name": "Safe", "value": number, "fill": "#10b981"},
           {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
         ]
       }
@@ -553,17 +596,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       aiResponse.content = rawText;
       aiResponse.type = 'text';
 
-    //   if (mode === 'analysis') {
-    //     // Try to extract JSON for Analysis Dashboard
-    //     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    //     if (jsonMatch) {
-    //       try {
-    //         aiResponse.analysisData = JSON.parse(jsonMatch[0]);
-    //         aiResponse.type = 'analysis';
-    //       } catch(e) {}
-    //     }
-    //   }
-    // }
+    
         if (mode === 'analysis') {
         // Try to extract JSON for Analysis Dashboard
         // ပိုကောင်းတဲ့ Regex ကို သုံးထားပါတယ် (Markdown code block တွေကို ဖယ်ရှားဖို့)
