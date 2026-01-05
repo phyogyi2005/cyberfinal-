@@ -590,6 +590,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
             )}
            {/* ... Attachments Preview code ... */}
 {/* ✅ LEVEL SELECTOR UI (SMALLER + CLOSE BUTTON) */}
+             
 {showLevelSelector && chatMode === 'learning' && (
   // bottom-24 ကနေ bottom-20 သို့ ပြောင်းပြီး အောက်နည်းနည်း ပိုကပ်လိုက်သည်
   <div className="absolute bottom-20 left-0 w-full px-4 md:px-10 z-20">
@@ -629,6 +630,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
     </div>
   </div>
 )}
+            
 // {/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
 // {showLevelSelector && chatMode === 'learning' && (
 //   <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
@@ -651,8 +653,9 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
 //   </div>
 // )}
 
-{/* ... Input Field code ... */}
+
             {/* Input Field */}
+      
             <div className="flex items-center gap-2 md:gap-4 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-slate-100 dark:border-slate-700 shadow-inner focus-within:ring-2 ring-blue-500/50 transition-all">
               
               {/* File Upload Button */}
