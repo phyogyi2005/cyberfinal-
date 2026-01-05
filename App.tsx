@@ -631,7 +631,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
   </div>
 )}
             
-// {/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
+ {/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
 // {showLevelSelector && chatMode === 'learning' && (
 //   <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
 //     <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
