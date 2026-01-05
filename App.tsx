@@ -398,7 +398,7 @@ function App() {
     } 
     else if (mode === 'analysis') {
       setInput("");
-      handleSend("Analysis Mode Started. Upload a file or paste a URL.", 'analysis');
+      handleSend('analysis');
     }
     else if (mode === 'learning') {
        handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
