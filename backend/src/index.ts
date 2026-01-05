@@ -572,7 +572,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
              aiResponse.content += "\n\n(⚠️ Analysis visual generation failed, but here is the text report.)";
           }
         }
-      }
+      }}
 
     const savedAiMsg = new Message(aiResponse);
     await savedAiMsg.save();
