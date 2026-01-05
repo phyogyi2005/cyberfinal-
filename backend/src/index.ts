@@ -437,14 +437,22 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       //     {"name": "Suspicious", "value": 10, "fill": "#f59e0b"}
       //   ]
       // }`;
-      const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.Your full name is cyber hygiene chatbot for myanmar youth.
+        
+  //     const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.Your full name is cyber hygiene chatbot for myanmar youth.
+  // User Knowledge Level: ${userLevel}.
+  // Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
+  // Current Mode: ${mode.toUpperCase()}.
+  // `;
+        const getSystemInstruction = (userLevel: KnowledgeLevel, language: 'en' | 'my', mode: ChatMode) => {
+ let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
   User Knowledge Level: ${userLevel}.
-  Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
+  Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
+  
   Current Mode: ${mode.toUpperCase()}.
   `;
         switch (mode) {
                 case 'learning':
-      instruction += `
+      Binstruction += `
       TASK: You are an engaging Cyber Tutor.
       
       STYLE GUIDE (Strictly Follow):
@@ -464,7 +472,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       `;
       break;
     case 'analysis':
-      instruction += `
+      Binstruction += `
       TASK: You are a Threat Analyst.
       1. The user will provide URLs, IPs, Files, or Images.
       2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
@@ -482,19 +490,21 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       `;
       break;
     default: // normal
-      instruction += `
+      Binstruction += `
       TASK: General Assistant.
       1. Answer questions normally.
       2. If the user uploads an image/file,and url  describe it generally unless asked to analyze it.
       `;
       break;
   }
+        return Binstruction;
+        };
                 
      
       
       
       
-      
+      const instruction = getSystemInstruction(userLevel,language,mode);
         
       // 🔥 NEW: Call the Multi-Key Rotation Logic
       const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
