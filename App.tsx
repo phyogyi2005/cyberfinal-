@@ -392,7 +392,7 @@ function App() {
   const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
 
-    if(mode === 'normal'{
+    if(mode === 'normal'){
       handleSend("Start Normal mode",'normal');
     }
     else if (mode === 'quiz') {
