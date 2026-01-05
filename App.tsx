@@ -391,8 +391,10 @@ function App() {
 
   const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
-    
-    if (mode === 'quiz') {
+
+    if(mode === 'normal'{
+      handleSend("Start Normal mode",'normal');}
+    else if (mode === 'quiz') {
       // ✅ FIX: ဒုတိယ parameter အနေနဲ့ 'quiz' ကို ထည့်ပေးလိုက်ပါ
       handleSend("Start Quiz", 'quiz'); 
     } 
