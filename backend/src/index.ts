@@ -443,7 +443,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
   // Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
   // Current Mode: ${mode.toUpperCase()}.
   // `;
-        const getSystemInstruction = (userLevel: KnowledgeLevel, language: 'en' | 'my', mode: ChatMode) => {
+        const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
  let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
   User Knowledge Level: ${userLevel}.
   Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
