@@ -437,23 +437,64 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       //     {"name": "Suspicious", "value": 10, "fill": "#f59e0b"}
       //   ]
       // }`;
-      const instruction = `You are Cyber Advisor, a Cybersecurity Threat Analyst. User Level: ${userLevel}. Mode: ${mode}. Use ${language === 'my' ? 'Myanmar' : 'English'}.
+      const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.Your full name is cyber hygiene chatbot for myanmar youth.
+  User Knowledge Level: ${userLevel}.
+  Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
+  Current Mode: ${mode.toUpperCase()}.
+  `;
+        switch (mode) {
+                case 'learning':
+      instruction += `
+      TASK: You are an engaging Cyber Tutor.
       
-      If mode is 'analysis', your response MUST be a high-quality dashboard analysis in JSON format.
-        TASK: You are a Threat Analyst.
+      STYLE GUIDE (Strictly Follow):
+      1. **Use Numbered Lists**: Break concepts down into steps (1., 2., 3.).
+      2. **Bold Main Points**: Highlight key terms like **Phishing**, **2FA**, etc.
+      3. **Short & Concise**: Keep paragraphs short (1-2 sentences). Avoid walls of text.
+      4. **Use Emojis**: Use flags, shields, locks, and checkmarks (e.g., 🚩, 🔒, ✅, 🛡️) to make it visual.
+      5. **Interactive**: End with a question to check understanding.
+      
+      Example Output:
+      "Here is how to spot a Phishing Email:
+      
+      1. 🚩 **Check the Sender**: Look for misspellings.
+      2. 🔗 **Don't Click Links**: Hover over them first.
+      
+      Do you want to try an example?"
+      `;
+      break;
+    case 'analysis':
+      instruction += `
+      TASK: You are a Threat Analyst.
       1. The user will provide URLs, IPs, Files, or Images.
       2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
       3. Output strictly compliant JSON for the analysis result:
       {
         "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
         "score": number (0-100, 100 is safest),
-        "findings": [{"category": "string", "details": "string"}],
+        "findings": [{"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},{"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}],
         "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
       }
       
       LANGUAGE INSTRUCTION:
       - If the language is set to Myanmar (Burmese), you MUST translate the values of 'category', 'details', and 'riskLevel' (if possible) into Burmese.
-      - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.`;
+      - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.
+      `;
+      break;
+    default: // normal
+      instruction += `
+      TASK: General Assistant.
+      1. Answer questions normally.
+      2. If the user uploads an image/file,and url  describe it generally unless asked to analyze it.
+      `;
+      break;
+  }
+                
+     
+      
+      
+      
+      
         
       // 🔥 NEW: Call the Multi-Key Rotation Logic
       const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
