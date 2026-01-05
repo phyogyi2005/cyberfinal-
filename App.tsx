@@ -25,6 +25,10 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null); // ✅ Fixed: Added back
 
+  
+  // --- STATE MANAGEMENT --- အောက်နားမှာ ထည့်ပါ
+const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီလိုင်းကို ထပ်ထည့်ပါ
+  
   // --- 1. INITIAL LOAD (Auth & History) ---
   useEffect(() => {
     // Theme Check
@@ -405,8 +409,17 @@ function App() {
      // handleSend("analysis");
     }
     else if (mode === 'learning') {
-       handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
+       //handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
+      setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
     }
+  };
+  const handleLearningLevelSelect = (level: string) => {
+    setShowLevelSelector(false); // Selector ကို ပြန်ပိတ်မယ်
+    
+    // AI ကို Level နဲ့တကွ စလှမ်းပြောမည့် စာ
+    const prompt = `I want to learn about Cybersecurity. My knowledge level is: ${level}. Where should I start?`;
+    
+    handleSend(prompt, 'learning');
   };
 
   if (!user) return <Auth onLogin={handleLogin} />;
@@ -575,7 +588,31 @@ function App() {
                   ))}
                 </div>
             )}
+           {/* ... Attachments Preview code ... */}
 
+{/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
+{showLevelSelector && chatMode === 'learning' && (
+  <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
+    <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
+        Select your knowledge level:
+      </h3>
+      <div className="flex gap-3">
+        {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+          <button
+            key={level}
+            onClick={() => handleLearningLevelSelect(level)}
+            className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+{/* ... Input Field code ... */}
             {/* Input Field */}
             <div className="flex items-center gap-2 md:gap-4 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-slate-100 dark:border-slate-700 shadow-inner focus-within:ring-2 ring-blue-500/50 transition-all">
               
