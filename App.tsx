@@ -630,29 +630,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
     </div>
   </div>
 )}
-            
- {/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
-// {showLevelSelector && chatMode === 'learning' && (
-//   <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
-//     <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
-//       <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
-//         Select your knowledge level:
-//       </h3>
-//       <div className="flex gap-3">
-//         {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-//           <button
-//             key={level}
-//             onClick={() => handleLearningLevelSelect(level)}
-//             className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
-//           >
-//             {level}
-//           </button>
-//         ))}
-//       </div>
-//     </div>
-//   </div>
-// )}
-
+           
 
             {/* Input Field */}
       
