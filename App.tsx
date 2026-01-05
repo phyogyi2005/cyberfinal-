@@ -398,7 +398,8 @@ function App() {
     } 
     else if (mode === 'analysis') {
        setInput("");
-       handleSend("analysis");
+       //
+      handleSend("analysis");
     }
     else if (mode === 'learning') {
        handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
