@@ -397,8 +397,8 @@ function App() {
       handleSend("Start Quiz", 'quiz'); 
     } 
     else if (mode === 'analysis') {
-      //setInput("");
-      //handleSend('analysis');
+       setInput("");
+       handleSend("analysis");
     }
     else if (mode === 'learning') {
        handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
