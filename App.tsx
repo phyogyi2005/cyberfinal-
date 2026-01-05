@@ -589,20 +589,38 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
                 </div>
             )}
            {/* ... Attachments Preview code ... */}
-
-{/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
+{/* ✅ LEVEL SELECTOR UI (SMALLER + CLOSE BUTTON) */}
 {showLevelSelector && chatMode === 'learning' && (
-  <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
-    <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
-      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
-        Select your knowledge level:
+  // bottom-24 ကနေ bottom-20 သို့ ပြောင်းပြီး အောက်နည်းနည်း ပိုကပ်လိုက်သည်
+  <div className="absolute bottom-20 left-0 w-full px-4 md:px-10 z-20">
+    {/* - max-w-4xl ကနေ max-w-2xl သို့ ပြောင်းပြီး အကျယ်ချုံ့လိုက်သည်
+       - p-4 ကနေ p-3 သို့ ပြောင်းပြီး padding လျှော့လိုက်သည်
+       - rounded-2xl ကနေ rounded-xl သို့ ပြောင်းသည်
+       - 'relative' ထပ်ထည့်ထားသည် (Close button နေရာချဖို့အတွက်)
+    */}
+    <div className="relative max-w-2xl mx-auto bg-white dark:bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+      
+      {/* 🔥 အသစ်ထည့်ထားသော CLOSE BUTTON */}
+      <button
+        onClick={() => setShowLevelSelector(false)} // နှိပ်ရင် Selector ကို ပိတ်မယ်
+        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all"
+      >
+         <span className="material-icons text-base block">close</span> {/* icon အသေးစားသုံးထားသည် */}
+      </button>
+
+      {/* Title: mb-3 ကို mb-2 သို့လျှော့၊ ခလုတ်နဲ့မထပ်အောင် pr-8 ထည့် */}
+      <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 pr-8">
+        Select knowledge level:
       </h3>
-      <div className="flex gap-3">
+
+      {/* gap-3 ကို gap-2 သို့လျှော့ */}
+      <div className="flex gap-2">
         {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
           <button
             key={level}
             onClick={() => handleLearningLevelSelect(level)}
-            className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
+            // py-3 px-4 ကို py-2 px-3 သို့လျှော့၊ text-xs ကို text-[11px] သို့လျှော့
+            className="flex-1 py-2 px-3 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
           >
             {level}
           </button>
@@ -611,6 +629,27 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
     </div>
   </div>
 )}
+// {/* ✅ LEVEL SELECTOR UI (Learning Mode အတွက် ဒီနေရာမှာ ထည့်ပါ) */}
+// {showLevelSelector && chatMode === 'learning' && (
+//   <div className="absolute bottom-24 left-0 w-full px-4 md:px-10 z-20">
+//     <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+//       <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
+//         Select your knowledge level:
+//       </h3>
+//       <div className="flex gap-3">
+//         {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+//           <button
+//             key={level}
+//             onClick={() => handleLearningLevelSelect(level)}
+//             className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
+//           >
+//             {level}
+//           </button>
+//         ))}
+//       </div>
+//     </div>
+//   </div>
+// )}
 
 {/* ... Input Field code ... */}
             {/* Input Field */}
