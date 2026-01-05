@@ -420,24 +420,41 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         });
       }
 
+      // const instruction = `You are Cyber Advisor, a Cybersecurity Threat Analyst. User Level: ${userLevel}. Mode: ${mode}. Use ${language === 'my' ? 'Myanmar' : 'English'}.
+      
+      // If mode is 'analysis', your response MUST be a high-quality dashboard analysis in JSON format.
+      // Example JSON Structure:
+      // {
+      //   "riskLevel": "Critical",
+      //   "score": 95,
+      //   "findings": [
+      //     {"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},
+      //     {"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}
+      //   ],
+      //   "chartData": [
+      //     {"name": "Malicious", "value": 75, "fill": "#ef4444"},
+      //     {"name": "Safety", "value": 15, "fill": "#10b981"},
+      //     {"name": "Suspicious", "value": 10, "fill": "#f59e0b"}
+      //   ]
+      // }`;
       const instruction = `You are Cyber Advisor, a Cybersecurity Threat Analyst. User Level: ${userLevel}. Mode: ${mode}. Use ${language === 'my' ? 'Myanmar' : 'English'}.
       
       If mode is 'analysis', your response MUST be a high-quality dashboard analysis in JSON format.
-      Example JSON Structure:
+        TASK: You are a Threat Analyst.
+      1. The user will provide URLs, IPs, Files, or Images.
+      2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
+      3. Output strictly compliant JSON for the analysis result:
       {
-        "riskLevel": "Critical",
-        "score": 95,
-        "findings": [
-          {"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},
-          {"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}
-        ],
-        "chartData": [
-          {"name": "Malicious", "value": 75, "fill": "#ef4444"},
-          {"name": "Safety", "value": 15, "fill": "#10b981"},
-          {"name": "Suspicious", "value": 10, "fill": "#f59e0b"}
-        ]
-      }`;
+        "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
+        "score": number (0-100, 100 is safest),
+        "findings": [{"category": "string", "details": "string"}],
+        "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
+      }
       
+      LANGUAGE INSTRUCTION:
+      - If the language is set to Myanmar (Burmese), you MUST translate the values of 'category', 'details', and 'riskLevel' (if possible) into Burmese.
+      - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.`;
+        
       // 🔥 NEW: Call the Multi-Key Rotation Logic
       const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
 
