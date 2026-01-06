@@ -599,7 +599,7 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
       const instruction = getSystemInstruction(userLevel,language,mode);
         
       // 🔥 NEW: Call the Multi-Key Rotation Logic
-        if(!usedRAG){
+       
             
       const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
       
@@ -646,12 +646,7 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
       details: error 
     });
   }
-      }
-        else{
-            // RAG success OR Gemini fallback ပြီးသား
-         aiResponse.content = finalResponseText;
-          aiResponse.type = 'text';
-        }
+      
 });
 
 app.get('/', (req, res) => {
