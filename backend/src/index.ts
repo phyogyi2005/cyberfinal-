@@ -606,12 +606,7 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
       const rawText = response.text || "";
       aiResponse.content = rawText;
       aiResponse.type = 'text';
-        }
-        else{
-            // RAG success OR Gemini fallback ပြီးသား
-         aiResponse.content = finalResponseText;
-          aiResponse.type = 'text';
-        }
+        
     
         if (mode === 'analysis') {
         // Try to extract JSON for Analysis Dashboard
@@ -651,6 +646,12 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
       details: error 
     });
   }
+      }
+        else{
+            // RAG success OR Gemini fallback ပြီးသား
+         aiResponse.content = finalResponseText;
+          aiResponse.type = 'text';
+        }
 });
 
 app.get('/', (req, res) => {
