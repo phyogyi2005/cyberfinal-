@@ -293,344 +293,318 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     await userMsg.save();
 
     let aiResponse: any = { role: 'model', sessionId, timestamp: new Date() };
-const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
- let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant for myanmar youth.
-  User Knowledge Level: ${userLevel}.
-  Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
-  
-  Current Mode: ${mode.toUpperCase()}.
-  `;
+
+    const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
+        let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant for myanmar youth.
+        User Knowledge Level: ${userLevel}.
+        Language: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
+        
+        Current Mode: ${mode.toUpperCase()}.
+        `;
+        
         switch (mode) {
-                case 'learning':
-      Binstruction += `
-      TASK: You are an engaging Cyber Tutor.
-      Look up the user knowledge level teach to user.
-      
-      STYLE GUIDE (Strictly Follow):
-      1. **Use Numbered Lists**: Break concepts down into steps (1., 2., 3.).
-      2. **Bold Main Points**: Highlight key terms like **Phishing**, **2FA**, etc.
-      3. **Short & Concise**: Keep paragraphs short (1-2 sentences). Avoid walls of text.
-      4. **Use Emojis**: Use flags, shields, locks, and checkmarks (e.g., 🚩, 🔒, ✅, 🛡️) to make it visual.
-      5. **Interactive**: End with a question to check understanding.
-      
-      Example Output:
-      "Here is how to spot a Phishing Email:
-      
-      1. 🚩 **Check the Sender**: Look for misspellings.
-      2. 🔗 **Don't Click Links**: Hover over them first.
-      
-      Do you want to try an example?"
-      `;
-      break;
-    
-            case 'analysis':
-      Binstruction += `
-      TASK: You are a Cybersecurity Threat Analyst.
-      
-      INSTRUCTIONS:
-      1. Analyze the input (URL, text, or file) for security risks.
-      2. Output the result in **STRICT JSON** format.
-      3. **IMPORTANT:** Provide **3 distinct findings** if possible.
-      4. **SCORING RULE:** The 'score' is a **SECURITY SCORE** (Safety Level). 
-         - If Risk is **Safe**, score MUST be **90-100**.
-         - If Risk is **Suspicious**, score MUST be **50-70**.
-         - If Risk is **Malicious**, score MUST be **0-30**.
-      
-      LANGUAGE RULES (CRITICAL):
-      - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details", "name", "value", "fill") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
-      - **JSON VALUES** (The content inside the keys, specifically 'details' and 'category') MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
-      
-      REQUIRED JSON STRUCTURE:
-      {
-        "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
-        "score": number (0-100. This is a SAFETY SCORE: 100 = Safe, 0 = Critical Risk),
-        "findings": [
-          {
-             "category": "String (e.g., Protocol Security)",
-             "details": "String (Explain the first finding in ${language === 'my' ? 'Myanmar' : 'English'})"
-          },
-          {
-             "category": "String (e.g., Domain Reputation)",
-             "details": "String (Explain the second finding in ${language === 'my' ? 'Myanmar' : 'English'})"
-          },
-          {
-             "category": "String (e.g., Content Analysis)",
-             "details": "String (Explain the third finding in ${language === 'my' ? 'Myanmar' : 'English'})"
-          }
-        ],
-        "chartData": [
-          {"name": "Malicious", "value": number, "fill": "#ef4444"},
-          {"name": "Safe", "value": number, "fill": "#10b981"},
-          {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
-        ]
-      }
-      `;
-      break;
-            case 'normal':
-                {
-                    Binstruction += `
-      TASK: General Assistant.
-      1. Answer questions normally.
-      2. If the user uploads an image/file,and url  describe it generally unless asked to analyze it.
-      `;
-                }
+            case 'learning':
+                Binstruction += `
+                TASK: You are an engaging Cyber Tutor.
+                Look up the user knowledge level teach to user.
+                
+                STYLE GUIDE (Strictly Follow):
+                1. **Use Numbered Lists**: Break concepts down into steps (1., 2., 3.).
+                2. **Bold Main Points**: Highlight key terms like **Phishing**, **2FA**, etc.
+                3. **Short & Concise**: Keep paragraphs short (1-2 sentences). Avoid walls of text.
+                4. **Use Emojis**: Use flags, shields, locks, and checkmarks (e.g., 🚩, 🔒, ✅, 🛡️) to make it visual.
+                5. **Interactive**: End with a question to check understanding.
+                
+                Example Output:
+                "Here is how to spot a Phishing Email:
+                
+                1. 🚩 **Check the Sender**: Look for misspellings.
+                2. 🔗 **Don't Click Links**: Hover over them first.
+                
+                Do you want to try an example?"
+                `;
                 break;
-    default: // normal
-      Binstruction += `
-      TASK: General Assistant.
-      1. Answer questions normally.
-      2. If the user uploads an image/file,and url  describe it generally unless asked to analyze it.
-      `;
-      break;
-  }
+            
+            case 'analysis':
+                Binstruction += `
+                TASK: You are a Cybersecurity Threat Analyst.
+                
+                INSTRUCTIONS:
+                1. Analyze the input (URL, text, or file) for security risks.
+                2. Output the result in **STRICT JSON** format.
+                3. **IMPORTANT:** Provide **3 distinct findings** if possible.
+                4. **SCORING RULE:** The 'score' is a **SECURITY SCORE** (Safety Level). 
+                   - If Risk is **Safe**, score MUST be **90-100**.
+                   - If Risk is **Suspicious**, score MUST be **50-70**.
+                   - If Risk is **Malicious**, score MUST be **0-30**.
+                
+                LANGUAGE RULES (CRITICAL):
+                - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details", "name", "value", "fill") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
+                - **JSON VALUES** (The content inside the keys, specifically 'details' and 'category') MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
+                
+                REQUIRED JSON STRUCTURE:
+                {
+                  "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
+                  "score": number (0-100. This is a SAFETY SCORE: 100 = Safe, 0 = Critical Risk),
+                  "findings": [
+                    {
+                      "category": "String (e.g., Protocol Security)",
+                      "details": "String (Explain the first finding in ${language === 'my' ? 'Myanmar' : 'English'})"
+                    },
+                    {
+                      "category": "String (e.g., Domain Reputation)",
+                      "details": "String (Explain the second finding in ${language === 'my' ? 'Myanmar' : 'English'})"
+                    },
+                    {
+                      "category": "String (e.g., Content Analysis)",
+                      "details": "String (Explain the third finding in ${language === 'my' ? 'Myanmar' : 'English'})"
+                    }
+                  ],
+                  "chartData": [
+                    {"name": "Malicious", "value": number, "fill": "#ef4444"},
+                    {"name": "Safe", "value": number, "fill": "#10b981"},
+                    {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
+                  ]
+                }
+                `;
+                break;
+            
+            case 'normal':
+            default:
+                Binstruction += `
+                TASK: General Assistant.
+                1. Answer questions normally.
+                2. If the user uploads an image/file/url, describe it generally unless asked to analyze it.
+                `;
+                break;
+        }
         return Binstruction;
-        };
+    };
+
     // =================================================================
     // 🛑 QUIZ LOGIC (UNCHANGED)
-    // ဒီအပိုင်းကို မူရင်းအတိုင်း လုံးဝ မပြောင်းဘဲ ထားပါတယ်
     // =================================================================
     if (mode === 'quiz') {
-      
-      const lowerMsg = message.toLowerCase();
-      
-      // (1) STOP LOGIC
-      if (lowerMsg === "no" || lowerMsg.includes("stop") || lowerMsg.includes("quit") || lowerMsg.includes("exit")) {
-          aiResponse.content = "🛑 **Quiz Ended.**\n\nThanks for playing! You can ask me general questions or type **'Start'** to play a new round.";
-          aiResponse.type = 'text';
-      }
-      // (2) START / CONTINUE
-      else if (lowerMsg.includes("start") || lowerMsg.includes("yes") || lowerMsg.includes("continue") || lowerMsg.includes("play again")) {
-          await Session.findByIdAndUpdate(sessionId, { score: 0, questionCount: 0 });
-          const startMsg = lowerMsg.includes("continue") || lowerMsg.includes("yes") 
-              ? "🚀 **Starting Next Round!**\n\n" 
-              : "🔄 **Starting New Quiz!**\n\n";
+        const lowerMsg = message.toLowerCase();
+        
+        // (1) STOP LOGIC
+        if (lowerMsg === "no" || lowerMsg.includes("stop") || lowerMsg.includes("quit") || lowerMsg.includes("exit")) {
+            aiResponse.content = "🛑 **Quiz Ended.**\n\nThanks for playing! You can ask me general questions or type **'Start'** to play a new round.";
+            aiResponse.type = 'text';
+        }
+        // (2) START / CONTINUE
+        else if (lowerMsg.includes("start") || lowerMsg.includes("yes") || lowerMsg.includes("continue") || lowerMsg.includes("play again")) {
+            await Session.findByIdAndUpdate(sessionId, { score: 0, questionCount: 0 });
+            const startMsg = lowerMsg.includes("continue") || lowerMsg.includes("yes") 
+                ? "🚀 **Starting Next Round!**\n\n" 
+                : "🔄 **Starting New Quiz!**\n\n";
 
-          const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
-          const nextQuestion = randomResults[0];
+            const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+            const nextQuestion = randomResults[0];
 
-          if (nextQuestion) {
-              aiResponse.content = `${startMsg}${language === 'my' ? "ပထမဆုံး မေးခွန်း-" : "Question 1:"}`;
-              aiResponse.type = 'quiz';
-              aiResponse.quizData = nextQuestion;
-          }
-      } 
-      // (3) GAMEPLAY
-      else {
-          let feedback = "";
-          const lastSystemMsg = await Message.findOne({ 
-            sessionId, 
-            role: 'model', 
-            quizData: { $exists: true } 
-          }).sort({ timestamp: -1 });
-
-          if (lastSystemMsg && lastSystemMsg.quizData) {
-            const qData = lastSystemMsg.quizData;
-            const correctIndex = qData.correctAnswerIndex; 
-            const correctOptionText = qData.options[correctIndex] || ""; 
-            
-            const userMsg = lowerMsg.trim();
-            const correctText = correctOptionText.trim().toLowerCase();
-            
-            let isCorrect = false;
-            if (correctText.length > 0 && userMsg.length > 0) {
-                if (userMsg.includes("incorrect:::")) {
-                    isCorrect = false; 
-                }  
-                else {
-                    isCorrect = correctText.includes(userMsg) || 
-                                userMsg.includes(correctText) || 
-                                userMsg.includes("correct:::");
-                }
+            if (nextQuestion) {
+                aiResponse.content = `${startMsg}${language === 'my' ? "ပထမဆုံး မေးခွန်း-" : "Question 1:"}`;
+                aiResponse.type = 'quiz';
+                aiResponse.quizData = nextQuestion;
             }
+        } 
+        // (3) GAMEPLAY
+        else {
+            let feedback = "";
+            const lastSystemMsg = await Message.findOne({ 
+                sessionId, 
+                role: 'model', 
+                quizData: { $exists: true } 
+            }).sort({ timestamp: -1 });
 
-            if (isCorrect) {
-                feedback = "✅ **Correct!**\n\n";
-                await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
-            } else {
-                feedback = `❌ **Incorrect.** The answer was: *${correctOptionText}*.\n\n`;
-            }
-            
-            await Session.findByIdAndUpdate(sessionId, { $inc: { questionCount: 1 } });
-
-            const freshSession = await Session.findById(sessionId);
-            const currentCount = freshSession?.questionCount || 0;
-            const currentScore = freshSession?.score || 0; 
-
-            if (currentCount >= 5) {
-                let finalComment = "";
-                if (currentScore >= 5) finalComment = "🏆 **Perfect!** You are a Cyber Expert!";
-                else if (currentScore >= 3) finalComment = "✅ **Good Job!** You passed.";
-                else finalComment = "📚 **Keep Learning!**";
-
-                aiResponse.content = `${feedback}🎉 **Round Completed!**\n\n📊 **Score: ${currentScore} / 5**\n${finalComment}\n\n❓ **Do you want to continue?** (Type 'Yes' or 'No')`;
-                aiResponse.type = 'text'; 
-            } else {
-                const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
-                const nextQuestion = randomResults[0];
+            if (lastSystemMsg && lastSystemMsg.quizData) {
+                const qData = lastSystemMsg.quizData;
+                const correctIndex = qData.correctAnswerIndex; 
+                const correctOptionText = qData.options[correctIndex] || ""; 
                 
-                if (!nextQuestion) {
-                  aiResponse.content = "No questions found.";
-                  aiResponse.type = 'text';
-                } else {
-                  aiResponse.content = `${feedback}**Question ${currentCount + 1}:**`; 
-                  aiResponse.type = 'quiz';
-                  aiResponse.quizData = nextQuestion;
+                const userMsg = lowerMsg.trim();
+                const correctText = correctOptionText.trim().toLowerCase();
+                
+                let isCorrect = false;
+                if (correctText.length > 0 && userMsg.length > 0) {
+                    if (userMsg.includes("incorrect:::")) {
+                        isCorrect = false; 
+                    }  
+                    else {
+                        isCorrect = correctText.includes(userMsg) || 
+                                    userMsg.includes(correctText) || 
+                                    userMsg.includes("correct:::");
+                    }
                 }
+
+                if (isCorrect) {
+                    feedback = "✅ **Correct!**\n\n";
+                    await Session.findByIdAndUpdate(sessionId, { $inc: { score: 1 } });
+                } else {
+                    feedback = `❌ **Incorrect.** The answer was: *${correctOptionText}*.\n\n`;
+                }
+                
+                await Session.findByIdAndUpdate(sessionId, { $inc: { questionCount: 1 } });
+
+                const freshSession = await Session.findById(sessionId);
+                const currentCount = freshSession?.questionCount || 0;
+                const currentScore = freshSession?.score || 0; 
+
+                if (currentCount >= 5) {
+                    let finalComment = "";
+                    if (currentScore >= 5) finalComment = "🏆 **Perfect!** You are a Cyber Expert!";
+                    else if (currentScore >= 3) finalComment = "✅ **Good Job!** You passed.";
+                    else finalComment = "📚 **Keep Learning!**";
+
+                    aiResponse.content = `${feedback}🎉 **Round Completed!**\n\n📊 **Score: ${currentScore} / 5**\n${finalComment}\n\n❓ **Do you want to continue?** (Type 'Yes' or 'No')`;
+                    aiResponse.type = 'text'; 
+                } else {
+                    const randomResults = await QuizQuestion.aggregate([{ $sample: { size: 1 } }]);
+                    const nextQuestion = randomResults[0];
+                    
+                    if (!nextQuestion) {
+                        aiResponse.content = "No questions found.";
+                        aiResponse.type = 'text';
+                    } else {
+                        aiResponse.content = `${feedback}**Question ${currentCount + 1}:**`; 
+                        aiResponse.type = 'quiz';
+                        aiResponse.quizData = nextQuestion;
+                    }
+                }
+            } else {
+                aiResponse.content = "Please type 'Start' to begin the quiz.";
+                aiResponse.type = 'text';
             }
-          } else {
-             aiResponse.content = "Please type 'Start' to begin the quiz.";
-             aiResponse.type = 'text';
-          }
-      }
-      
-      const savedQuizMsg = new Message(aiResponse);
-      await savedQuizMsg.save();
-      return res.json(savedQuizMsg);
-    } 
-      // (1) HISTORY & CURRENT PARTS PREPARATION (မူရင်းအတိုင်းထားပါ)
-      const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
-      const historyParts = history.reverse().map(m => ({
+        }
+        
+        const savedQuizMsg = new Message(aiResponse);
+        await savedQuizMsg.save();
+        return res.json(savedQuizMsg);
+    } // END QUIZ BLOCK
+
+    // =================================================================
+    // 🧠 NORMAL / LEARNING / ANALYSIS MODE LOGIC
+    // =================================================================
+    
+    // Prepare history and current parts
+    const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
+    const historyParts = history.reverse().map(m => ({
         role: m.role,
         parts: [{ text: m.content }]
-      }));
-      const currentParts: any[] = [{ text: message }];
-      
-      // Check if there are attachments
-      const hasAttachments = attachments && attachments.length > 0;
+    }));
+    
+    const currentParts: any[] = [{ text: message }];
+    const hasAttachments = attachments && attachments.length > 0;
 
-      if (hasAttachments) {
+    if (hasAttachments) {
         attachments.forEach((att: any) => {
-          currentParts.push({
-            inlineData: {
-              mimeType: att.mimeType, 
-              data: att.data          
-            }
-          });
+            currentParts.push({
+                inlineData: {
+                    mimeType: att.mimeType, 
+                    data: att.data          
+                }
+            });
         });
-      }
+    }
 
-      let finalResponseText = "";
-
-      // 🔥 RAG INTEGRATION (New Code Here)
-      // Normal mode ဖြစ်မယ်၊ File/Image မပါဘူးဆိုရင် RAG ကို အရင်မေးမယ်
-      let usedRAG = false;
-
-      if (mode === 'normal' && !hasAttachments) {
-          try {
-              const ragUrl = process.env.RAG_NGROK_URL; // .env မှာ ထည့်ထားပါ
-              
-              if (ragUrl) {
-                  console.log("🔄 Calling RAG Server via Ngrok...");
-                  const ragResponse = await fetch(`${ragUrl}/chat`, { // Endpoint ကို Colab ကုဒ်နဲ့ ကိုက်အောင်ပြင်ပါ (ဥပမာ /chat or /query)
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ query: message }) // Colab က လက်ခံတဲ့ body format အတိုင်းထားပါ
-                  });
-
-                  if (ragResponse.ok) {
-                      const data : any = await ragResponse.json();
-                      // Colab က ပြန်ပေးတဲ့ key ကို ဒီမှာသုံးပါ (ဥပမာ: data.response, data.answer)
-                      if (data.response || data.answer) {
-                          finalResponseText = data.response || data.answer;
-                          usedRAG = true;
-                          console.log("✅ RAG Server Responded Successfully");
-                      }
-                  } else {
-                      console.warn("⚠️ RAG Server returned error, falling back to Gemini.");
-                  }
-              }
-          } catch (err) {
-              console.error("❌ RAG Connection Failed (Using Gemini instead):", err);
-          }
-      }
-      // 🔥 RAG INTEGRATION - ပြင်ဆင်ပြီးသား
-
-
-// 🔥 ဒီအောက်က code တွေက RAG မအောင်မြင်ရင် (သို့) 
-// analysis/quiz mode ဆိုရင် လုပ်မှာဖြစ်တယ်
-// (မူရင်း Gemini code တွေ ဆက်ရေးပါ)
-
-      // 🔥 GEMINI FALLBACK (RAG မအောင်မြင်ရင် (သို့) တခြား Mode ဆိုရင် Gemini သုံးမယ်)
-      if (!usedRAG) {
-          const instruction = getSystemInstruction(userLevel, language, mode);
-          const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
-          finalResponseText = response.text || "";
-      }
-
-      // (2) SAVE RESPONSE & RETURN
-      aiResponse.content = finalResponseText;
-      aiResponse.type = 'text';
-
-      // Analysis Mode အတွက် Logic (မူရင်းအတိုင်း)
-      if (mode === 'analysis' && !usedRAG) {
-        const cleanText = finalResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            aiResponse.analysisData = JSON.parse(jsonMatch[0]);
-            aiResponse.type = 'analysis';
-          } catch(e) {}
-        }
-      }
-   // }
-
-    
-    
-      
-      const instruction = getSystemInstruction(userLevel,language,mode);
-        
-      // 🔥 NEW: Call the Multi-Key Rotation Logic
-       
+    // 🔥 RAG INTEGRATION - Only for normal mode without attachments
+    if (mode === 'normal' && !hasAttachments) {
+        try {
+            const ragUrl = process.env.RAG_NGROK_URL;
             
-      const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
-      
-      const rawText = response.text || "";
-      aiResponse.content = rawText;
-      aiResponse.type = 'text';
-        
-    
-        if (mode === 'analysis') {
-        // Try to extract JSON for Analysis Dashboard
-        // ပိုကောင်းတဲ့ Regex ကို သုံးထားပါတယ် (Markdown code block တွေကို ဖယ်ရှားဖို့)
-        const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        // ပထမဆုံး { နဲ့ နောက်ဆုံး } ကြားက စာသားကိုပဲ ယူပါမယ်
-        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+            if (ragUrl) {
+                console.log("🔄 Calling RAG Server...");
+                const ragResponse = await fetch(`${ragUrl}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        query: message,
+                        user_id: req.user.id
+                    })
+                });
 
-        if (jsonMatch) {
-          try {
-            aiResponse.analysisData = JSON.parse(jsonMatch[0]);
-            aiResponse.type = 'analysis';
-          } catch(e) {
-             console.error("JSON Parse Error:", e);
-             // JSON မအောင်မြင်ရင် Text အနေနဲ့ပဲ ပြပါမယ် (User မတိုင်ပင်မိအောင်)
-             aiResponse.content += "\n\n(⚠️ Analysis visual generation failed, but here is the text report.)";
-          }
+                if (ragResponse.ok) {
+                    const data: any = await ragResponse.json();
+                    
+                    // Debug log
+                    console.log("RAG Response Keys:", Object.keys(data));
+                    
+                    // Try different response formats
+                    const ragAnswer = data.response || data.answer || data.text || data.result;
+                    
+                    if (ragAnswer) {
+                        console.log("✅ RAG Server Success - Returning RAG response");
+                        
+                        // RAG response ကို ချက်ချင်း return ပြန်မယ်
+                        aiResponse.content = ragAnswer;
+                        aiResponse.type = 'text';
+                        
+                        const savedAiMsg = new Message(aiResponse);
+                        await savedAiMsg.save();
+                        
+                        // Update session
+                        await Session.findByIdAndUpdate(sessionId, { 
+                            lastUpdated: new Date() 
+                        });
+                        
+                        return res.json(savedAiMsg);  // 🔥 အရေးကြီး: ဒီမှာ ရပ်လိုက်ပါ!
+                    }
+                } else {
+                    console.warn(`⚠️ RAG Server Error: ${ragResponse.status}`);
+                }
+            }
+        } catch (err: any) {
+            console.error("❌ RAG Failed:", err.message);
+            // RAG မှားရင် Gemini ဆီဆက်သွားမယ်
         }
-      }}
+    }
 
+    // 🔥 GEMINI FALLBACK (RAG မအောင်မြင်ရင် (သို့) တခြား Mode ဆိုရင်)
+    const instruction = getSystemInstruction(userLevel, language, mode);
+    const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
+    
+    const rawText = response.text || "";
+    aiResponse.content = rawText;
+    aiResponse.type = 'text';
+
+    // Analysis Mode အတွက် JSON Parsing
+    if (mode === 'analysis') {
+        const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+            try {
+                aiResponse.analysisData = JSON.parse(jsonMatch[0]);
+                aiResponse.type = 'analysis';
+            } catch(e: any) {
+                console.error("JSON Parse Error:", e.message);
+                aiResponse.content += "\n\n(⚠️ Analysis visual generation failed, but here is the text report.)";
+            }
+        }
+    }
+
+    // Save AI response
     const savedAiMsg = new Message(aiResponse);
     await savedAiMsg.save();
 
+    // Update session title and timestamp
     const msgCount = await Message.countDocuments({ sessionId });
     if (msgCount <= 2) {
-      await Session.findByIdAndUpdate(sessionId, { title: message.slice(0, 30) });
+        await Session.findByIdAndUpdate(sessionId, { 
+            title: message.slice(0, 30) + (message.length > 30 ? "..." : "") 
+        });
     }
-    await Session.findByIdAndUpdate(sessionId, { lastUpdated: new Date() });
+    await Session.findByIdAndUpdate(sessionId, { 
+        lastUpdated: new Date() 
+    });
 
-    res.json(savedAiMsg);
+    return res.json(savedAiMsg);
 
   } catch (error: any) {
     console.error("🔥 SERVER ERROR:", error);
     res.status(500).json({ 
       error: `AI Error: ${error.message || "Unknown Error"}`, 
-      details: error 
+      details: error.message 
     });
   }
-      
 });
-
-app.get('/', (req, res) => {
-    res.send("✅ Cyber Advisor Backend is Running Successfully!");
-});
-app.listen(PORT, () => console.log(`🚀 Cyber Server on port ${PORT}`));
