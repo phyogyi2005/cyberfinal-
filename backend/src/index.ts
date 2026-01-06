@@ -398,18 +398,41 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     } // END QUIZ BLOCK
 
 
-    // =================================================================
-    // 🧠 AI CHAT / ANALYSIS LOGIC (UPDATED WITH MULTI-KEY)
+   
+    // else {
+    //   const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
+    //   const historyParts = history.reverse().map(m => ({
+    //     role: m.role,
+    //     parts: [{ text: m.content }]
+    //   }));
+    //   const currentParts: any[] = [{ text: message }];
+
+    //   if (attachments && attachments.length > 0) {
+    //     attachments.forEach((att: any) => {
+    //       currentParts.push({
+    //         inlineData: {
+    //           mimeType: att.mimeType, 
+    //           data: att.data          
+    //         }
+    //       });
+    //     });
+    //   }
+      // =================================================================
+    // 🧠 AI CHAT / ANALYSIS LOGIC
     // =================================================================
     else {
+      // (1) HISTORY & CURRENT PARTS PREPARATION (မူရင်းအတိုင်းထားပါ)
       const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
       const historyParts = history.reverse().map(m => ({
         role: m.role,
         parts: [{ text: m.content }]
       }));
       const currentParts: any[] = [{ text: message }];
+      
+      // Check if there are attachments
+      const hasAttachments = attachments && attachments.length > 0;
 
-      if (attachments && attachments.length > 0) {
+      if (hasAttachments) {
         attachments.forEach((att: any) => {
           currentParts.push({
             inlineData: {
@@ -420,29 +443,66 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
         });
       }
 
-      // const instruction = `You are Cyber Advisor, a Cybersecurity Threat Analyst. User Level: ${userLevel}. Mode: ${mode}. Use ${language === 'my' ? 'Myanmar' : 'English'}.
-      
-      // If mode is 'analysis', your response MUST be a high-quality dashboard analysis in JSON format.
-      // Example JSON Structure:
-      // {
-      //   "riskLevel": "Critical",
-      //   "score": 95,
-      //   "findings": [
-      //     {"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},
-      //     {"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}
-      //   ],
-      //   "chartData": [
-      //     {"name": "Malicious", "value": 75, "fill": "#ef4444"},
-      //     {"name": "Safety", "value": 15, "fill": "#10b981"},
-      //     {"name": "Suspicious", "value": 10, "fill": "#f59e0b"}
-      //   ]
-      // }`;
-        
-  //     const instruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant.
-  // User Knowledge Level: ${userLevel}.
-  // Use Language in all mode: ${language === 'my' ? 'Myanmar (Burmese)' : 'English'}.
-  // Current Mode: ${mode.toUpperCase()}.
-  // `;
+      let finalResponseText = "";
+
+      // 🔥 RAG INTEGRATION (New Code Here)
+      // Normal mode ဖြစ်မယ်၊ File/Image မပါဘူးဆိုရင် RAG ကို အရင်မေးမယ်
+      let usedRAG = false;
+
+      if (mode === 'normal' && !hasAttachments) {
+          try {
+              const ragUrl = process.env.RAG_NGROK_URL; // .env မှာ ထည့်ထားပါ
+              
+              if (ragUrl) {
+                  console.log("🔄 Calling RAG Server via Ngrok...");
+                  const ragResponse = await fetch(`${ragUrl}/chat`, { // Endpoint ကို Colab ကုဒ်နဲ့ ကိုက်အောင်ပြင်ပါ (ဥပမာ /chat or /query)
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ query: message }) // Colab က လက်ခံတဲ့ body format အတိုင်းထားပါ
+                  });
+
+                  if (ragResponse.ok) {
+                      const data : any = await ragResponse.json();
+                      // Colab က ပြန်ပေးတဲ့ key ကို ဒီမှာသုံးပါ (ဥပမာ: data.response, data.answer)
+                      if (data.response || data.answer) {
+                          finalResponseText = data.response || data.answer;
+                          usedRAG = true;
+                          console.log("✅ RAG Server Responded Successfully");
+                      }
+                  } else {
+                      console.warn("⚠️ RAG Server returned error, falling back to Gemini.");
+                  }
+              }
+          } catch (err) {
+              console.error("❌ RAG Connection Failed (Using Gemini instead):", err);
+          }
+      }
+
+      // 🔥 GEMINI FALLBACK (RAG မအောင်မြင်ရင် (သို့) တခြား Mode ဆိုရင် Gemini သုံးမယ်)
+      if (!usedRAG) {
+          const instruction = getSystemInstruction(userLevel, language, mode);
+          const response = await generateResponseWithFallback(historyParts, currentParts, instruction, mode);
+          finalResponseText = response.text || "";
+      }
+
+      // (2) SAVE RESPONSE & RETURN
+      aiResponse.content = finalResponseText;
+      aiResponse.type = 'text';
+
+      // Analysis Mode အတွက် Logic (မူရင်းအတိုင်း)
+      if (mode === 'analysis' && !usedRAG) {
+        const cleanText = finalResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            aiResponse.analysisData = JSON.parse(jsonMatch[0]);
+            aiResponse.type = 'analysis';
+          } catch(e) {}
+        }
+      }
+    }
+
+    
         const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
  let Binstruction = `You are Cyber Advisor, a Cybersecurity Awareness AI Assistant for myanmar youth.
   User Knowledge Level: ${userLevel}.
@@ -472,54 +532,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
       Do you want to try an example?"
       `;
       break;
-    // case 'analysis':
-    //   Binstruction += `
-    //   TASK: You are a Threat Analyst.
-    //   1. The user will provide URLs, IPs, Files, or Images.
-    //   2. You MUST analyze them for specific security risks (Phishing, Malware, SQL Injection, etc.).
-    //   3. Output strictly compliant JSON for the analysis result:
-    //   {
-    //     "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical",
-    //     "score": number (0-100, 100 is safest),
-    //     "findings": [{"category": "Typosquatting", "details": "The domain utilizes a homograph attack..."},{"category": "Security Protocol", "details": "The URL uses unencrypted HTTP..."}],
-    //     "chartData": [{"name": "string", "value": number, "fill": "hexcode"}]
-    //   }
-      
-    //   LANGUAGE INSTRUCTION:
-    //   - If the language is set to Myanmar (Burmese), you MUST translate the values of 'category', 'details', and 'riskLevel' (if possible) into Burmese.
-    //   - However, KEEP the JSON keys (riskLevel, score, findings, chartData) in English.
-    //   `;
-    //   break;
-      //           case 'analysis':
-      // Binstruction += `
-      // TASK: You are a Cybersecurity Threat Analyst.
-      
-      // INSTRUCTIONS:
-      // 1. Analyze the input (URL, text, or file) for security risks.
-      // 2. Output the result in **STRICT JSON** format.
-      
-      // LANGUAGE RULES (CRITICAL):
-      // - **JSON KEYS** (e.g., "riskLevel", "score", "findings", "chartData", "category", "details") MUST REMAIN IN **ENGLISH**. DO NOT TRANSLATE KEYS.
-      // - **JSON VALUES** (The content inside the keys) MUST be in **${language === 'my' ? 'MYANMAR (Burmese)' : 'ENGLISH'}**.
-      
-      // REQUIRED JSON STRUCTURE:
-      // {
-      //   "riskLevel": "Safe" | "Low" | "Medium" | "High" | "Critical", 
-      //   "score": number (0-100, where 100 is safest),
-      //   "findings": [
-      //     {
-      //        "category": "String (e.g., Safe or HarmLess , Suspicious , Malicious/Phishing)",
-      //        "details": "String (Explain why it is dangerous in ${language === 'my' ? 'Myanmar' : 'English'})"
-      //     }
-      //   ],
-      //   "chartData": [
-      //     {"name": "Malicious", "value": number, "fill": "#ef4444"},
-      //     {"name": "Safe", "value": number, "fill": "#10b981"}
-      //     {"name": "Suspicious", "value": number, "fill": "#f59e0b"}
-      //   ]
-      // }
-      // `;
-      // break;
+    
             case 'analysis':
       Binstruction += `
       TASK: You are a Cybersecurity Threat Analyst.
