@@ -608,3 +608,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
     });
   }
 });
+app.get('/', (req, res) => {
+    res.send("✅ Cyber Advisor Backend is Running Successfully!");
+});
+app.listen(PORT, () => console.log(`🚀 Cyber Server on port ${PORT}`));
