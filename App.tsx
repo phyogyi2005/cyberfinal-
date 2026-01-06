@@ -399,9 +399,8 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
     if(mode === 'normal'){
       handleSend("Start Normal mode",'normal');
     }
-    else if (mode === 'quiz') {
-      // ✅ FIX: ဒုတိယ parameter အနေနဲ့ 'quiz' ကို ထည့်ပေးလိုက်ပါ
-      handleSend("Start Quiz", 'quiz'); 
+    else if (mode === 'analysis') {
+       setInput("");
     }
     else if (mode === 'learning' || mode === 'quiz') {
        //handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
