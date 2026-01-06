@@ -395,31 +395,38 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
 
   const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
-
+    setShowLevelSelector(false);
     if(mode === 'normal'){
       handleSend("Start Normal mode",'normal');
     }
     else if (mode === 'quiz') {
       // ✅ FIX: ဒုတိယ parameter အနေနဲ့ 'quiz' ကို ထည့်ပေးလိုက်ပါ
       handleSend("Start Quiz", 'quiz'); 
-    } 
-    else if (mode === 'analysis') {
-       setInput("");
-       //
-     // handleSend("analysis");
     }
-    else if (mode === 'learning') {
+    else if (mode === 'learning' || mode === 'quiz') {
        //handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
       setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
     }
   };
+  // const handleLearningLevelSelect = (level: string) => {
+  //   setShowLevelSelector(false); // Selector ကို ပြန်ပိတ်မယ်
+    
+  //   // AI ကို Level နဲ့တကွ စလှမ်းပြောမည့် စာ
+  //   const prompt = `I want to learn about Cybersecurity. My knowledge level is: ${level}. Where should I start?`;
+    
+  //   handleSend(prompt, 'learning');
+  // };
   const handleLearningLevelSelect = (level: string) => {
-    setShowLevelSelector(false); // Selector ကို ပြန်ပိတ်မယ်
+    setShowLevelSelector(false); // Selector ပိတ်မယ်
     
-    // AI ကို Level နဲ့တကွ စလှမ်းပြောမည့် စာ
-    const prompt = `I want to learn about Cybersecurity. My knowledge level is: ${level}. Where should I start?`;
-    
-    handleSend(prompt, 'learning');
+    if (chatMode === 'quiz') {
+      // ✅ Quiz Mode ဆိုရင် "Start Quiz" လို့ ပို့ပါမယ် (Level ပါ ထည့်ပို့ပေးလိုက်ပါတယ်)
+      handleSend(`Start Quiz (${level})`, 'quiz'); 
+    } else {
+      // ✅ Learning Mode ဆိုရင် ပုံမှန်အတိုင်း Learning prompt ပို့ပါမယ်
+      const prompt = `I want to learn about Cybersecurity. My knowledge level is: ${level}. Where should I start?`;
+      handleSend(prompt, 'learning');
+    }
   };
 
   if (!user) return <Auth onLogin={handleLogin} />;
@@ -594,7 +601,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
            {/* ... Attachments Preview code ... */}
 
             {/* ✅ LEVEL SELECTOR UI (ALIGNED WITH INPUT) */}
-            {showLevelSelector && chatMode === 'learning' && (
+            {showLevelSelector && (chatMode === 'learning' || chatMode === 'quiz') && (
               <div className="w-full mb-2 z-20 animate-slide-up">
                 
                 {/* max-w-2xl ကိုဖြုတ်ပြီး w-full ထားလိုက်ပါက Input Box အကျယ်အတိုင်း ညီသွားပါမည် */}
