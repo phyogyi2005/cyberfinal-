@@ -511,8 +511,8 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
 
       let finalResponseText = "";
 
-      🔥 RAG INTEGRATION (New Code Here)
-      Normal mode ဖြစ်မယ်၊ File/Image မပါဘူးဆိုရင် RAG ကို အရင်မေးမယ်
+      // 🔥 RAG INTEGRATION (New Code Here)
+      // Normal mode ဖြစ်မယ်၊ File/Image မပါဘူးဆိုရင် RAG ကို အရင်မေးမယ်
       let usedRAG = false;
 
       if (mode === 'normal' && !hasAttachments) {
