@@ -548,39 +548,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
         </div>
 {/* ✅ LEVEL SELECTOR UI (SMALLER + CLOSE BUTTON) */}
              
-{/* ✅ LEVEL SELECTOR UI (ALIGNED WITH INPUT) */}
-            {showLevelSelector && chatMode === 'learning' && (
-              <div className="w-full mb-2 z-20 animate-slide-up">
-                
-                {/* max-w-2xl ကိုဖြုတ်ပြီး w-full ထားလိုက်ပါက Input Box အကျယ်အတိုင်း ညီသွားပါမည် */}
-                <div className="relative w-full bg-white dark:bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-                  
-                  {/* Close Button */}
-                  <button
-                    onClick={() => setShowLevelSelector(false)}
-                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all"
-                  >
-                     <span className="material-icons text-base block">close</span>
-                  </button>
 
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 pr-8">
-                    Select knowledge level:
-                  </h3>
-
-                  <div className="flex gap-2">
-                    {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => handleLearningLevelSelect(level)}
-                        className="flex-1 py-2 px-3 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
            
         {/* Bottom Input */}
         <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
@@ -625,6 +593,39 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
             )}
            {/* ... Attachments Preview code ... */}
 
+            {/* ✅ LEVEL SELECTOR UI (ALIGNED WITH INPUT) */}
+            {showLevelSelector && chatMode === 'learning' && (
+              <div className="w-full mb-2 z-20 animate-slide-up">
+                
+                {/* max-w-2xl ကိုဖြုတ်ပြီး w-full ထားလိုက်ပါက Input Box အကျယ်အတိုင်း ညီသွားပါမည် */}
+                <div className="relative w-full bg-white dark:bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+                  
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setShowLevelSelector(false)}
+                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all"
+                  >
+                     <span className="material-icons text-base block">close</span>
+                  </button>
+
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 pr-8">
+                    Select knowledge level:
+                  </h3>
+
+                  <div className="flex gap-2">
+                    {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => handleLearningLevelSelect(level)}
+                        className="flex-1 py-2 px-3 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-300 border-2 border-transparent hover:border-purple-400"
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Input Field */}
       
