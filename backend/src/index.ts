@@ -486,32 +486,7 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
       const savedQuizMsg = new Message(aiResponse);
       await savedQuizMsg.save();
       return res.json(savedQuizMsg);
-    } // END QUIZ BLOCK
-
-
-   
-    // else {
-    //   const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
-    //   const historyParts = history.reverse().map(m => ({
-    //     role: m.role,
-    //     parts: [{ text: m.content }]
-    //   }));
-    //   const currentParts: any[] = [{ text: message }];
-
-    //   if (attachments && attachments.length > 0) {
-    //     attachments.forEach((att: any) => {
-    //       currentParts.push({
-    //         inlineData: {
-    //           mimeType: att.mimeType, 
-    //           data: att.data          
-    //         }
-    //       });
-    //     });
-    //   }
-      // =================================================================
-    // 🧠 AI CHAT / ANALYSIS LOGIC
-    // =================================================================
-    else {
+    } 
       // (1) HISTORY & CURRENT PARTS PREPARATION (မူရင်းအတိုင်းထားပါ)
       const history = await Message.find({ sessionId }).sort({ timestamp: -1 }).limit(10);
       const historyParts = history.reverse().map(m => ({
@@ -538,36 +513,96 @@ const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: st
 
       // 🔥 RAG INTEGRATION (New Code Here)
       // Normal mode ဖြစ်မယ်၊ File/Image မပါဘူးဆိုရင် RAG ကို အရင်မေးမယ်
-      let usedRAG = false;
+      // let usedRAG = false;
 
-      if (mode === 'normal' && !hasAttachments) {
-          try {
-              const ragUrl = process.env.RAG_NGROK_URL; // .env မှာ ထည့်ထားပါ
+      // if (mode === 'normal' && !hasAttachments) {
+      //     try {
+      //         const ragUrl = process.env.RAG_NGROK_URL; // .env မှာ ထည့်ထားပါ
               
-              if (ragUrl) {
-                  console.log("🔄 Calling RAG Server via Ngrok...");
-                  const ragResponse = await fetch(`${ragUrl}/chat`, { // Endpoint ကို Colab ကုဒ်နဲ့ ကိုက်အောင်ပြင်ပါ (ဥပမာ /chat or /query)
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ query: message }) // Colab က လက်ခံတဲ့ body format အတိုင်းထားပါ
-                  });
+      //         if (ragUrl) {
+      //             console.log("🔄 Calling RAG Server via Ngrok...");
+      //             const ragResponse = await fetch(`${ragUrl}/chat`, { // Endpoint ကို Colab ကုဒ်နဲ့ ကိုက်အောင်ပြင်ပါ (ဥပမာ /chat or /query)
+      //                 method: 'POST',
+      //                 headers: { 'Content-Type': 'application/json' },
+      //                 body: JSON.stringify({ query: message }) // Colab က လက်ခံတဲ့ body format အတိုင်းထားပါ
+      //             });
 
-                  if (ragResponse.ok) {
-                      const data : any = await ragResponse.json();
-                      // Colab က ပြန်ပေးတဲ့ key ကို ဒီမှာသုံးပါ (ဥပမာ: data.response, data.answer)
-                      if (data.response || data.answer) {
-                          finalResponseText = data.response || data.answer;
-                          usedRAG = true;
-                          console.log("✅ RAG Server Responded Successfully");
-                      }
-                  } else {
-                      console.warn("⚠️ RAG Server returned error, falling back to Gemini.");
-                  }
-              }
-          } catch (err) {
-              console.error("❌ RAG Connection Failed (Using Gemini instead):", err);
-          }
-      }
+      //             if (ragResponse.ok) {
+      //                 const data : any = await ragResponse.json();
+      //                 // Colab က ပြန်ပေးတဲ့ key ကို ဒီမှာသုံးပါ (ဥပမာ: data.response, data.answer)
+      //                 if (data.response || data.answer) {
+      //                     finalResponseText = data.response || data.answer;
+      //                     usedRAG = true;
+      //                     console.log("✅ RAG Server Responded Successfully");
+      //                 }
+      //             } else {
+      //                 console.warn("⚠️ RAG Server returned error, falling back to Gemini.");
+      //             }
+      //         }
+      //     } catch (err) {
+      //         console.error("❌ RAG Connection Failed (Using Gemini instead):", err);
+      //     }
+      // }
+      // 🔥 RAG INTEGRATION - ပြင်ဆင်ပြီးသား
+let usedRAG = false;
+let finalResponseText = "";
+
+// RAG ကိုအရင်စမ်းကြည့်မယ် (normal mode နဲ့ file/image မပါရင်)
+if (mode === 'normal' && !hasAttachments) {
+    try {
+        const ragUrl = process.env.RAG_NGROK_URL;
+        
+        if (ragUrl) {
+            console.log("🔄 Calling RAG Server...");
+            const ragResponse = await fetch(`${ragUrl}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    query: message,
+                    user_id: req.user.id  // Optional: user id ပါပို့လို့ရတယ်
+                })
+            });
+
+            if (ragResponse.ok) {
+                const data: any = await ragResponse.json();
+                
+                // Colab ကနေ ဘယ် key နဲ့ ပြန်လဲဆိုတာ စစ်ကြည့်ပါ
+                console.log("RAG Response Keys:", Object.keys(data));
+                
+                // မတူညီတဲ့ response format တွေအတွက်
+                const ragAnswer = data.response || data.answer || data.text || data.result;
+                
+                if (ragAnswer) {
+                    console.log("✅ RAG Server Success - Returning RAG response");
+                    
+                    // RAG response ကို ချက်ချင်း return ပြန်မယ်
+                    aiResponse.content = ragAnswer;
+                    aiResponse.type = 'text';
+                    
+                    const savedAiMsg = new Message(aiResponse);
+                    await savedAiMsg.save();
+                    
+                    // Session update
+                    await Session.findByIdAndUpdate(sessionId, { 
+                        lastUpdated: new Date() 
+                    });
+                    
+                    // 🔥 အရေးကြီး: ဒီမှာ ရပ်လိုက်ပါ!
+                    return res.json(savedAiMsg);
+                }
+            } else {
+                console.warn(`⚠️ RAG Server Error: ${ragResponse.status}`);
+            }
+        }
+    } catch (err: any) {
+        console.error("❌ RAG Failed:", err.message);
+        // RAG မှားရင် Gemini ဆီဆက်သွားမယ်
+    }
+}
+
+// 🔥 ဒီအောက်က code တွေက RAG မအောင်မြင်ရင် (သို့) 
+// analysis/quiz mode ဆိုရင် လုပ်မှာဖြစ်တယ်
+// (မူရင်း Gemini code တွေ ဆက်ရေးပါ)
 
       // 🔥 GEMINI FALLBACK (RAG မအောင်မြင်ရင် (သို့) တခြား Mode ဆိုရင် Gemini သုံးမယ်)
       if (!usedRAG) {
