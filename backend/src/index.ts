@@ -500,7 +500,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
           } catch(e) {}
         }
       }
-    }
+   // }
 
     
         const getSystemInstruction = (userLevel: string, language: 'en' | 'my', mode: string) => {
