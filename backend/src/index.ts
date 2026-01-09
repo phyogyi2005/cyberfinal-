@@ -1027,9 +1027,53 @@ if (mode === 'normal' && !hasAttachments) {
 }
 
 // RAG သုံးမယ်ဆိုရင်
-if (shouldUseRAG) {
-    console.log("🔄 RAG server ကို ခေါ်ဆိုနေပါသည်...");
+// if (shouldUseRAG) {
+//     console.log("🔄 RAG server ကို ခေါ်ဆိုနေပါသည်...");
     
+//     try {
+//         const ragResponse = await fetch(`${ragUrl}/chat`, {
+//             method: 'POST',
+//             headers: { 
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json'
+//             },
+//             body: JSON.stringify({ 
+//                 query: message,
+//                 user_id: req.user.id
+//             }),
+            
+//             const controller = new AbortController();
+    
+//     // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
+        
+//             const timeoutId = setTimeout(() => controller.abort(), 10000);
+//         });
+        
+//         if (ragResponse.ok) {
+//             const data = await ragResponse.json();
+//             console.log("✅ RAG မှ အဖြေရရှိပါသည်");
+            
+//             // RAG အဖြေကို ချက်ချင်း return ပြန်ပါ
+//             aiResponse.content = data.response || data.answer || "RAG အဖြေ";
+//             const savedAiMsg = new Message(aiResponse);
+//             await savedAiMsg.save();
+            
+//             return res.json(savedAiMsg); // 🛑 ဒီမှာ အဆုံးသတ်ပါ!
+//         }
+//     } catch (error) {
+//         console.log("⚠️ RAG server အဆင်မပြေပါ၊ Gemini ကို ပြန်သုံးပါမည်");
+//         // Error ဖြစ်ရင် Gemini ဆီသွားပါ
+//     }
+// }
+      if (shouldUseRAG) {
+    console.log("🔄 RAG server ကို ခေါ်ဆိုနေပါသည်...");
+
+    // 1. AbortController ကို ဖန်တီးပါ
+    const controller = new AbortController();
+    
+    // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
         const ragResponse = await fetch(`${ragUrl}/chat`, {
             method: 'POST',
@@ -1041,14 +1085,12 @@ if (shouldUseRAG) {
                 query: message,
                 user_id: req.user.id
             }),
-            
-            const controller = new AbortController();
-    
-    // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
-        
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            signal: controller.signal // 3. controller signal ကို ဒီမှာထည့်ပါ
         });
         
+        // 4. အဖြေရပြီဆိုရင် Timeout ကို ပြန်ဖျက်ပါ (Memory မစားအောင်လို့ပါ)
+        clearTimeout(timeoutId);
+
         if (ragResponse.ok) {
             const data = await ragResponse.json();
             console.log("✅ RAG မှ အဖြေရရှိပါသည်");
@@ -1061,7 +1103,11 @@ if (shouldUseRAG) {
             return res.json(savedAiMsg); // 🛑 ဒီမှာ အဆုံးသတ်ပါ!
         }
     } catch (error) {
-        console.log("⚠️ RAG server အဆင်မပြေပါ၊ Gemini ကို ပြန်သုံးပါမည်");
+        if (error.name === 'AbortError') {
+            console.log("⚠️ RAG server Time out ဖြစ်သွားပါသည် (၁၀ စက္ကန့်ကျော်သွားပါသည်)");
+        } else {
+            console.log("⚠️ RAG server အဆင်မပြေပါ၊ Gemini ကို ပြန်သုံးပါမည်", error);
+        }
         // Error ဖြစ်ရင် Gemini ဆီသွားပါ
     }
 }
