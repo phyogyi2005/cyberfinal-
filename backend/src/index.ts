@@ -5,6 +5,9 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from "@google/genai";
+import fetch from 'node-fetch';
+import { AbortController } from 'abort-controller';
+
 
 dotenv.config(); // Load .env file
 
@@ -561,51 +564,93 @@ if (mode === 'normal' && !hasAttachments) {
 //         // Error ဖြစ်ရင် Gemini ဆီသွားပါ
 //     }
 // }
-      if (shouldUseRAG) {
-    console.log("🔄 RAG server ကို ခေါ်ဆိုနေပါသည်...");
+      //CHTAGPt
+//       if (shouldUseRAG) { 
+//     console.log("🔄 RAG server ကို ခေါ်ဆိုနေပါသည်...");
 
-    // 1. AbortController ကို ဖန်တီးပါ
-    const controller = new AbortController();
+//     // 1. AbortController ကို ဖန်တီးပါ
+//     const controller = new AbortController();
     
-    // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+//     // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
+//     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    try {
-        const ragResponse = await fetch(`${ragUrl}/chat`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ 
-                query: message,
-                user_id: req.user.id
-            }),
-            signal: controller.signal // 3. controller signal ကို ဒီမှာထည့်ပါ
-        });
+//     try {
+//         const ragResponse = await fetch(`${ragUrl}/chat`, {
+//             method: 'POST',
+//             headers: { 
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json'
+//             },
+//             body: JSON.stringify({ 
+//                 query: message,
+//                 user_id: req.user.id
+//             }),
+//             signal: controller.signal // 3. controller signal ကို ဒီမှာထည့်ပါ
+//         });
         
-        // 4. အဖြေရပြီဆိုရင် Timeout ကို ပြန်ဖျက်ပါ (Memory မစားအောင်လို့ပါ)
-        clearTimeout(timeoutId);
+//         // 4. အဖြေရပြီဆိုရင် Timeout ကို ပြန်ဖျက်ပါ (Memory မစားအောင်လို့ပါ)
+//         clearTimeout(timeoutId);
 
-        if (ragResponse.ok) {
-            const data = await ragResponse.json();
-            console.log("✅ RAG မှ အဖြေရရှိပါသည်");
+//         if (ragResponse.ok) {
+//             const data = await ragResponse.json();
+//             console.log("✅ RAG မှ အဖြေရရှိပါသည်");
             
-            // RAG အဖြေကို ချက်ချင်း return ပြန်ပါ
-            aiResponse.content = data.response || data.answer || "RAG အဖြေ";
-            const savedAiMsg = new Message(aiResponse);
-            await savedAiMsg.save();
+//             // RAG အဖြေကို ချက်ချင်း return ပြန်ပါ
+//             aiResponse.content = data.response || data.answer || "RAG အဖြေ";
+//             const savedAiMsg = new Message(aiResponse);
+//             await savedAiMsg.save();
             
-            return res.json(savedAiMsg); // 🛑 ဒီမှာ အဆုံးသတ်ပါ!
-        }
-    } catch (error: any) {
-        if (error.name === 'AbortError') {
-            console.log("⚠️ RAG server Time out ဖြစ်သွားပါသည် (၁၀ စက္ကန့်ကျော်သွားပါသည်)");
-        } else {
-            console.log("⚠️ RAG server အဆင်မပြေပါ၊ Gemini ကို ပြန်သုံးပါမည်", error);
-        }
-        // Error ဖြစ်ရင် Gemini ဆီသွားပါ
+//             return res.json(savedAiMsg); // 🛑 ဒီမှာ အဆုံးသတ်ပါ!
+//         }
+//     } catch (error: any) {
+//         if (error.name === 'AbortError') {
+//             console.log("⚠️ RAG server Time out ဖြစ်သွားပါသည် (၁၀ စက္ကန့်ကျော်သွားပါသည်)");
+//         } else {
+//             console.log("⚠️ RAG server အဆင်မပြေပါ၊ Gemini ကို ပြန်သုံးပါမည်", error);
+//         }
+//         // Error ဖြစ်ရင် Gemini ဆီသွားပါ
+//     }
+// }
+      if (shouldUseRAG && ragUrl) {
+  console.log("🔄 Calling RAG backend...");
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const ragResponse = await fetch(`${ragUrl}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: message
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (ragResponse.ok) {
+      const data = await ragResponse.json();
+      console.log("✅ RAG response received");
+
+      aiResponse.content = data.response;
+      const savedAiMsg = new Message(aiResponse);
+      await savedAiMsg.save();
+
+      return res.json(savedAiMsg);
+    } else {
+      console.warn("⚠️ RAG returned non-200:", ragResponse.status);
     }
+
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      console.warn("⏱️ RAG timeout (30s)");
+    } else {
+      console.error("❌ RAG error:", err.message);
+    }
+  }
 }
 
 // RAG မအောင်မြင်ရင် (သို့) ဆိုက်ဘာမေးခွန်းမဟုတ်ရင် Gemini သုံးပါ
