@@ -403,8 +403,8 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
        setInput("");
     }
     else if (mode === 'learning') {
-       handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
-      //setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
+       //handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
+      setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
     }
     else if(mode === 'quiz'){
       handleSend("Start Quiz",'quiz');
