@@ -23,6 +23,7 @@ const apiKeys = [
     process.env.API_KEY // Legacy support
 ].filter(key => key && key.trim() !== '');
 
+const ragUrl = process.env.RAG_NGROK_URL;
 // --- 2. MODEL CONFIGURATION (NEW) ---
 // Updated for January 2026 (Google AI Studio)
 
