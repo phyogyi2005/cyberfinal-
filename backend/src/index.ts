@@ -1041,7 +1041,12 @@ if (shouldUseRAG) {
                 query: message,
                 user_id: req.user.id
             }),
-            timeout: 10000 // 10 စက္ကန့် စောင့်ပါ
+            
+            const controller = new AbortController();
+    
+    // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
+        
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
         });
         
         if (ragResponse.ok) {
