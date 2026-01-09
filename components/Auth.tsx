@@ -47,12 +47,50 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 transition-colors duration-300">
       <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-hidden p-8 transition-colors">
         
-        <div className="text-center mb-8">
+        {/* <div className="text-center mb-8">
             <div className="mx-auto h-20 w-20 mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-all duration-300">
              <span className="material-icons text-4xl text-white">security</span>
           </div>
           <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight uppercase">Cyber Advisor</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs font-bold uppercase tracking-widest">Your Security Assistant</p>
+        </div> */}
+         <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-cyber-900 px-4">
+      <div className="max-w-md w-full bg-white dark:bg-cyber-800 rounded-xl shadow-2xl overflow-hidden p-8 transition-colors">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-24 w-24 mb-4 drop-shadow-2xl transform hover:scale-105 transition-transform duration-300">
+             {/* Robot Circle Logo */}
+             <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-lg">
+              <defs>
+                <linearGradient id="robotShieldGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#ef4444" /> {/* Red */}
+                  <stop offset="50%" stopColor="#a855f7" /> {/* Purple */}
+                  <stop offset="100%" stopColor="#3b82f6" /> {/* Blue */}
+                </linearGradient>
+              </defs>
+              
+              {/* Circle Background */}
+              <circle cx="32" cy="32" r="30" fill="url(#robotShieldGrad)" />
+              
+              {/* Robot Silhouette */}
+              <g fill="white">
+                {/* Antenna */}
+                <rect x="31" y="14" width="2" height="8" rx="1" />
+                <circle cx="32" cy="12" r="3" />
+                
+                {/* Head */}
+                <rect x="20" y="22" width="24" height="18" rx="5" />
+                
+                {/* Eyes */}
+                <circle cx="27" cy="30" r="3" fill="#1e293b" />
+                <circle cx="37" cy="30" r="3" fill="#1e293b" />
+                
+                {/* Body/Shoulders */}
+                <path d="M20 44C20 44 22 52 32 52C42 52 44 44 44 44H20Z" />
+              </g>
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-cyber-900 dark:text-white tracking-tight">Cyber Advisor</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Your Personal Cybersecurity Assistant</p>
         </div>
 
         {/* 🔴 Error တက်ရင် စာနီနီလေး ပေါ်လာမယ့် နေရာ */}
