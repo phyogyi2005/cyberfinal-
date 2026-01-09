@@ -519,7 +519,7 @@ app.post('/api/chat', authenticateToken, async (req: any, res) => {
 let shouldUseRAG = false;
 
 if (mode === 'normal' && !hasAttachments) {
-    shouldUseRAG = "isCyberQuestion"; // ဆိုက်ဘာမေးခွန်းမှသာ RAG သုံးပါ
+    shouldUseRAG = true ; // ဆိုက်ဘာမေးခွန်းမှသာ RAG သုံးပါ
 }
 
 // RAG သုံးမယ်ဆိုရင်
