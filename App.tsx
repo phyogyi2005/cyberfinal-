@@ -487,7 +487,7 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
         
         {/* Header */}
         <header className="h-20 shrink-0 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 bg-white dark:bg-slate-900/50 backdrop-blur-xl z-10">
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-slate-500">
                 <span className="material-icons">menu</span>
              </button>
@@ -502,7 +502,39 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
                 MODE: {chatMode.toUpperCase()}
               </p>
             </div>
-          </div>
+          </div> */}
+          <div className="flex items-center gap-2 md:hidden">
+             <button onClick={createNewSession} className="text-cyber-500 p-2"><span className="material-icons">add_circle</span></button>
+           </div>
+           <div className="flex items-center gap-3">
+              {/* Custom SVG Logo - Robot Circle */}
+              <div className="h-9 w-9">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="headerShieldGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#ef4444" />
+                      <stop offset="50%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#3b82f6" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="32" cy="32" r="30" fill="url(#headerShieldGrad)" />
+                  <g fill="white">
+                    <rect x="31" y="14" width="2" height="8" rx="1" />
+                    <circle cx="32" cy="12" r="3" />
+                    <rect x="20" y="22" width="24" height="18" rx="5" />
+                    <circle cx="27" cy="30" r="3" fill="#1e293b" />
+                    <circle cx="37" cy="30" r="3" fill="#1e293b" />
+                    <path d="M20 44C20 44 22 52 32 52C42 52 44 44 44 44H20Z" />
+                  </g>
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h1 className="font-bold text-lg text-slate-800 dark:text-white hidden sm:block">Cyber Advisor</h1>
+                <span className="text-[10px] text-cyber-500 font-semibold uppercase tracking-widest hidden sm:block">
+                  Current Mode: {chatMode}
+                </span>
+              </div>
+           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
              <button 
