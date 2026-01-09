@@ -1102,7 +1102,7 @@ if (mode === 'normal' && !hasAttachments) {
             
             return res.json(savedAiMsg); // 🛑 ဒီမှာ အဆုံးသတ်ပါ!
         }
-    } catch (error) {
+    } catch (error: any) {
         if (error.name === 'AbortError') {
             console.log("⚠️ RAG server Time out ဖြစ်သွားပါသည် (၁၀ စက္ကန့်ကျော်သွားပါသည်)");
         } else {
