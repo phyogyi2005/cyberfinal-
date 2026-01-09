@@ -542,7 +542,7 @@ if (mode === 'normal' && !hasAttachments) {
     
 //     // 2. Timeout ကို သတ်မှတ်ပါ (၁၀ စက္ကန့်ပြည့်ရင် controller.abort() ကို ခေါ်ပါမယ်)
         
-//             const timeoutId = setTimeout(() => controller.abort(), 10000);
+//             const timeoutId = setTimeout(() => controller.abort(), 120000);
 //         });
         
 //         if (ragResponse.ok) {
