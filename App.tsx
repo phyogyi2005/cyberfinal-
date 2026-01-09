@@ -397,14 +397,17 @@ const [showLevelSelector, setShowLevelSelector] = useState(false); // ✅ ဒီ
     setChatMode(mode);
     setShowLevelSelector(false);
     if(mode === 'normal'){
-      handleSend("Start Normal mode",'normal');
+     setInput("");
     }
     else if (mode === 'analysis') {
        setInput("");
     }
-    else if (mode === 'learning' || mode === 'quiz') {
-       //handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
-      setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
+    else if (mode === 'learning') {
+       handleSend("I want to learn about Cybersecurity. Where should I start?", 'learning');
+      //setShowLevelSelector(true); // Level ရွေးခိုင်းမယ့်အကွက်ကို ဖော်မယ်
+    }
+    else if(mode === 'quiz'){
+      handleSend("Start Quiz",'quiz');
     }
   };
   // const handleLearningLevelSelect = (level: string) => {
